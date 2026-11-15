@@ -20,10 +20,27 @@ export function AdminSiteCmsPanel({ cmsDraft, onChange }: AdminSiteCmsPanelProps
     { id: 'about_contact', ar: 'عن الشركة والتواصل', en: 'About & Contact' },
   ];
 
-  const updateHero = (field: keyof SiteCmsConfig['hero'], value: string) => {
+  const updateHero = (
+    field: Exclude<keyof SiteCmsConfig['hero'], 'value_props'>,
+    value: string
+  ) => {
     onChange({
       ...cmsDraft,
       hero: { ...cmsDraft.hero, [field]: value },
+    });
+  };
+
+  const updateValueProp = (
+    index: number,
+    field: 'title_ar' | 'title_en' | 'desc_ar' | 'desc_en',
+    value: string
+  ) => {
+    const next = cmsDraft.hero.value_props.map((vp, idx) =>
+      idx === index ? { ...vp, [field]: value } : vp
+    );
+    onChange({
+      ...cmsDraft,
+      hero: { ...cmsDraft.hero, value_props: next },
     });
   };
 
@@ -294,6 +311,54 @@ export function AdminSiteCmsPanel({ cmsDraft, onChange }: AdminSiteCmsPanelProps
               </div>
             </div>
           </div>
+
+          <div className="pt-6 border-t border-slate-100">
+            <h3 className="font-heading text-base font-bold text-[#064E3B] mb-4">
+              {t('بطاقات القيمة المضافة الـ 4 (لماذا EXPERT)', '4 Value Propositions (Why EXPERT)')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {cmsDraft.hero.value_props.map((vp, idx) => (
+                <div
+                  key={vp.num}
+                  className="p-4 rounded-xl bg-[#F8FAFC] border border-slate-200/80 space-y-2.5"
+                >
+                  <p className="text-xs font-bold text-[#059669] tabular-nums">{vp.num}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={vp.title_ar}
+                      onChange={(e) => updateValueProp(idx, 'title_ar', e.target.value)}
+                      placeholder="العنوان (عربي)"
+                      className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold"
+                    />
+                    <input
+                      type="text"
+                      dir="ltr"
+                      value={vp.title_en}
+                      onChange={(e) => updateValueProp(idx, 'title_en', e.target.value)}
+                      placeholder="Title (English)"
+                      className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold"
+                    />
+                  </div>
+                  <textarea
+                    rows={2}
+                    value={vp.desc_ar}
+                    onChange={(e) => updateValueProp(idx, 'desc_ar', e.target.value)}
+                    placeholder="الوصف (عربي)"
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
+                  />
+                  <textarea
+                    rows={2}
+                    dir="ltr"
+                    value={vp.desc_en}
+                    onChange={(e) => updateValueProp(idx, 'desc_en', e.target.value)}
+                    placeholder="Description (English)"
+                    className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -476,6 +541,23 @@ export function AdminSiteCmsPanel({ cmsDraft, onChange }: AdminSiteCmsPanelProps
                     onChange={(e) => updateService(idx, 'description_en', e.target.value)}
                     className="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
                   />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={srv.deliverable_ar}
+                      onChange={(e) => updateService(idx, 'deliverable_ar', e.target.value)}
+                      placeholder="المخرج (عربي)"
+                      className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
+                    />
+                    <input
+                      type="text"
+                      dir="ltr"
+                      value={srv.deliverable_en}
+                      onChange={(e) => updateService(idx, 'deliverable_en', e.target.value)}
+                      placeholder="Deliverable (EN)"
+                      className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs"
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -622,6 +704,69 @@ export function AdminSiteCmsPanel({ cmsDraft, onChange }: AdminSiteCmsPanelProps
                   value={cmsDraft.about_contact.address_en}
                   onChange={(e) => updateAbout('address_en', e.target.value)}
                   className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#059669]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-5 border-t border-slate-100">
+            <h4 className="font-heading text-sm font-bold text-[#064E3B] mb-3">
+              {t('روابط حسابات التواصل الاجتماعي', 'Official Social Media Links')}
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Facebook</label>
+                <input
+                  type="url"
+                  dir="ltr"
+                  value={cmsDraft.about_contact.social_facebook}
+                  onChange={(e) => updateAbout('social_facebook', e.target.value)}
+                  placeholder="https://facebook.com/..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-[#059669]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Instagram</label>
+                <input
+                  type="url"
+                  dir="ltr"
+                  value={cmsDraft.about_contact.social_instagram}
+                  onChange={(e) => updateAbout('social_instagram', e.target.value)}
+                  placeholder="https://instagram.com/..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-[#059669]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">LinkedIn</label>
+                <input
+                  type="url"
+                  dir="ltr"
+                  value={cmsDraft.about_contact.social_linkedin}
+                  onChange={(e) => updateAbout('social_linkedin', e.target.value)}
+                  placeholder="https://linkedin.com/..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-[#059669]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">YouTube</label>
+                <input
+                  type="url"
+                  dir="ltr"
+                  value={cmsDraft.about_contact.social_youtube}
+                  onChange={(e) => updateAbout('social_youtube', e.target.value)}
+                  placeholder="https://youtube.com/..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-[#059669]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">X (Twitter)</label>
+                <input
+                  type="url"
+                  dir="ltr"
+                  value={cmsDraft.about_contact.social_x}
+                  onChange={(e) => updateAbout('social_x', e.target.value)}
+                  placeholder="https://x.com/..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-[#059669]"
                 />
               </div>
             </div>

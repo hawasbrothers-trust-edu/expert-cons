@@ -28,6 +28,7 @@ import type {
   StudyRequestStatus,
 } from '../types';
 import { isSupabaseConfigured, supabase } from './supabase';
+import { sendWeb3FormsEmail, type Web3FormsPayload } from './web3forms';
 
 const KEYS = {
   STUDY_REQUESTS: 'expert_study_requests_v1',
@@ -76,7 +77,14 @@ function generateId(prefix: string): string {
 function mergeCmsWithDefaults(partial?: Partial<SiteCmsConfig> | null): SiteCmsConfig {
   if (!partial) return DEFAULT_SITE_CMS_CONFIG;
   return {
-    hero: { ...DEFAULT_SITE_CMS_CONFIG.hero, ...(partial.hero || {}) },
+    hero: {
+      ...DEFAULT_SITE_CMS_CONFIG.hero,
+      ...(partial.hero || {}),
+      value_props:
+        Array.isArray(partial.hero?.value_props) && partial.hero.value_props.length > 0
+          ? partial.hero.value_props
+          : DEFAULT_SITE_CMS_CONFIG.hero.value_props,
+    },
     metrics:
       Array.isArray(partial.metrics) && partial.metrics.length === DEFAULT_SITE_CMS_CONFIG.metrics.length
         ? partial.metrics
@@ -117,20 +125,30 @@ function getAllowedAdminEmails(): string[] {
   return Array.from(emails);
 }
 
-function recordAlertLog(
+async function dispatchEmailAlert(
   event_type: NotificationAlertLog['event_type'],
   subject: string,
   details: string,
+  web3Payload: Web3FormsPayload,
   overrideRecipient?: string
-): NotificationAlertLog {
+): Promise<{ log: NotificationAlertLog; delivered: boolean; apiMessage: string }> {
   const cms = api.getSiteCmsConfigSync();
   const recipient = overrideRecipient || cms.notifications.notification_email || 'alerts@expertconsu.com';
+
+  const result = await sendWeb3FormsEmail({
+    ...web3Payload,
+    subject,
+    target_inbox: recipient,
+  });
+
   const entry: NotificationAlertLog = {
     id: generateId('ALT'),
     event_type,
     recipient_email: recipient,
     subject,
     details,
+    delivery_status: result.success ? 'delivered' : 'failed',
+    api_message: result.message,
     created_at: new Date().toISOString(),
   };
   const current = readStore<NotificationAlertLog[]>(KEYS.NOTIFICATION_LOGS, []);
@@ -146,7 +164,7 @@ function recordAlertLog(
       },
     ]);
   }
-  return entry;
+  return { log: entry, delivered: result.success, apiMessage: result.message };
 }
 
 export const api = {
@@ -182,10 +200,41 @@ export const api = {
 
     const cms = api.getSiteCmsConfigSync();
     if (cms.notifications.alert_on_study_request) {
-      recordAlertLog(
+      const fundingText = newRecord.needs_funding ? 'Yes - Needs Bank/Fund Financing' : 'No - Self Funded';
+      await dispatchEmailAlert(
         'study_request',
-        `طلب دراسة جديد: ${newRecord.project_name}`,
-        `مقدم الطلب: ${newRecord.name} (${newRecord.phone}) · القطاع: ${newRecord.sector}`
+        `New Feasibility Study Request: ${newRecord.project_name} (${newRecord.id})`,
+        `مقدم الطلب: ${newRecord.name} (${newRecord.phone}) · القطاع: ${newRecord.sector}`,
+        {
+          subject: `New Feasibility Study Request: ${newRecord.project_name}`,
+          from_name: 'EXPERT Study Request Wizard',
+          name: newRecord.name,
+          email: newRecord.email,
+          replyto: newRecord.email,
+          client_name: newRecord.name,
+          phone: newRecord.phone,
+          sector: newRecord.sector,
+          study_type: newRecord.type,
+          project_name: newRecord.project_name,
+          location: newRecord.location,
+          capital_range: newRecord.capital_range,
+          funding_status: fundingText,
+          preferred_contact: newRecord.preferred_contact || 'whatsapp',
+          message: [
+            `New Feasibility Study Request Received (${newRecord.id})`,
+            `Client Name: ${newRecord.name}`,
+            `Phone: ${newRecord.phone}`,
+            `Email: ${newRecord.email}`,
+            `Project Name: ${newRecord.project_name}`,
+            `Sector: ${newRecord.sector} | Study Type: ${newRecord.type}`,
+            `Location: ${newRecord.location}`,
+            `Capital Range: ${newRecord.capital_range}`,
+            `Funding Status: ${fundingText}`,
+            newRecord.notes ? `Notes: ${newRecord.notes}` : '',
+          ]
+            .filter(Boolean)
+            .join('\n'),
+        }
       );
     }
 
@@ -255,10 +304,34 @@ export const api = {
 
     const cms = api.getSiteCmsConfigSync();
     if (cms.notifications.alert_on_booking) {
-      recordAlertLog(
+      const meetingTypeLabel = newAppt.type === 'online' ? 'Online Video Consultation' : 'In-Person (HQ)';
+      await dispatchEmailAlert(
         'booking',
-        `حجز موعد استشارة جديد: ${newAppt.name}`,
-        `الموضوع: ${newAppt.topic} · الموعد: ${newAppt.date} ${newAppt.time}`
+        `New Consultation Booking: ${newAppt.name} (${newAppt.date} ${newAppt.time})`,
+        `الموضوع: ${newAppt.topic} · الموعد: ${newAppt.date} ${newAppt.time}`,
+        {
+          subject: `New Consultation Booking: ${newAppt.name}`,
+          from_name: 'EXPERT Consultation Scheduler',
+          name: newAppt.name,
+          email: newAppt.email,
+          replyto: newAppt.email,
+          client_name: newAppt.name,
+          phone: newAppt.phone,
+          topic: newAppt.topic,
+          appointment_date: newAppt.date,
+          appointment_time: newAppt.time,
+          duration_minutes: `${newAppt.duration} min`,
+          meeting_type: meetingTypeLabel,
+          message: [
+            `New Consultation Booking (${newAppt.id})`,
+            `Client Name: ${newAppt.name}`,
+            `Phone: ${newAppt.phone}`,
+            `Email: ${newAppt.email}`,
+            `Topic: ${newAppt.topic}`,
+            `Date & Time: ${newAppt.date} at ${newAppt.time} (${newAppt.duration} min)`,
+            `Meeting Type: ${meetingTypeLabel}`,
+          ].join('\n'),
+        }
       );
     }
 
@@ -497,10 +570,28 @@ export const api = {
 
     const cms = api.getSiteCmsConfigSync();
     if (cms.notifications.alert_on_contact_message) {
-      recordAlertLog(
+      await dispatchEmailAlert(
         'contact_message',
-        `رسالة تواصل جديدة: ${msg.subject}`,
-        `المرسل: ${msg.name} (${msg.email} · ${msg.phone})`
+        `New Contact Inquiry: ${msg.subject}`,
+        `المرسل: ${msg.name} (${msg.email} · ${msg.phone})`,
+        {
+          subject: `EXPERT Contact Form: ${msg.subject}`,
+          from_name: 'EXPERT Contact Page',
+          name: msg.name,
+          email: msg.email,
+          replyto: msg.email,
+          sender_name: msg.name,
+          phone: msg.phone,
+          inquiry_subject: msg.subject,
+          message: [
+            `New Contact Form Message (${msg.id})`,
+            `Sender Name: ${msg.name}`,
+            `Email: ${msg.email}`,
+            `Phone: ${msg.phone}`,
+            `Subject: ${msg.subject}`,
+            `Message:\n${msg.message}`,
+          ].join('\n'),
+        }
       );
     }
 
@@ -867,11 +958,28 @@ export const api = {
     return readStore<NotificationAlertLog[]>(KEYS.NOTIFICATION_LOGS, []);
   },
 
-  async sendTestNotification(targetEmail: string): Promise<NotificationAlertLog> {
-    return recordAlertLog(
+  async sendTestNotification(
+    targetEmail: string
+  ): Promise<{ log: NotificationAlertLog; delivered: boolean; apiMessage: string }> {
+    const cms = api.getSiteCmsConfigSync();
+    return dispatchEmailAlert(
       'test',
-      'إشعار تجريبي — مركز عمليات EXPERT',
-      'تم اختبار قناة التنبيهات الفورية بنجاح. ستصل إشعارات الطلبات الجديدة إلى هذا البريد.',
+      'EXPERT Operations — Web3Forms Test Notification',
+      'اختبار قناة الإشعارات الفورية عبر Web3Forms API',
+      {
+        subject: 'EXPERT Operations — Live Email Notification Test',
+        from_name: 'EXPERT Admin Operations Center',
+        name: 'EXPERT Admin System',
+        email: cms.notifications.public_contact_email || 'info@expertconsu.com',
+        replyto: cms.notifications.public_contact_email || 'info@expertconsu.com',
+        target_inbox: targetEmail,
+        message: [
+          'This is a live verification email dispatched from the EXPERT Operations & CMS Dashboard via Web3Forms.',
+          `Configured Target Alert Inbox: ${targetEmail}`,
+          `Public Contact Email: ${cms.notifications.public_contact_email}`,
+          `Timestamp: ${new Date().toISOString()}`,
+        ].join('\n'),
+      },
       targetEmail
     );
   },

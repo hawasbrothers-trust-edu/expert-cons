@@ -1,13 +1,15 @@
-import { ChevronDown, Lock, LogIn, LogOut, Menu, Shield, UserCheck, X } from 'lucide-react';
+import { ChevronDown, Lock, LogIn, LogOut, Mail, Menu, Phone, Shield, UserCheck, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useSiteCms } from '../context/SiteCmsContext';
 import { api } from '../lib/api';
 import type { AuthUser } from '../types';
 import { BrandLogo } from './BrandLogo';
 
 export function Header() {
   const { lang, setLanguage, t } = useLanguage();
+  const { cms } = useSiteCms();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -110,6 +112,29 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/70">
+        <div className="bg-[#064E3B] text-emerald-100 text-[11px] border-b border-emerald-900/60">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-7 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <a
+                href={`mailto:${cms.notifications.public_contact_email}`}
+                className="inline-flex items-center gap-1.5 hover:text-[#D4AF37] transition-colors truncate"
+              >
+                <Mail className="w-3 h-3 text-[#D4AF37] shrink-0" aria-hidden="true" />
+                <span dir="ltr">{cms.notifications.public_contact_email}</span>
+              </a>
+              <a
+                href={`tel:${cms.about_contact.phone_primary}`}
+                className="hidden sm:inline-flex items-center gap-1.5 hover:text-[#D4AF37] transition-colors tabular-nums"
+              >
+                <Phone className="w-3 h-3 text-[#D4AF37] shrink-0" aria-hidden="true" />
+                <span dir="ltr">{cms.about_contact.phone_primary}</span>
+              </a>
+            </div>
+            <span className="hidden md:inline text-emerald-200/90 truncate">
+              {t(cms.about_contact.address_ar, cms.about_contact.address_en)}
+            </span>
+          </div>
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3 lg:gap-4">
           <BrandLogo variant="header" />
 

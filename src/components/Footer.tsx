@@ -179,11 +179,11 @@ export function Footer() {
             <div className="flex flex-wrap items-center gap-2 pt-1">
               {[
                 { label: 'WhatsApp', href: `https://wa.me/${whatsappDigits}` },
-                { label: 'Facebook', href: 'https://facebook.com' },
-                { label: 'Instagram', href: 'https://instagram.com' },
-                { label: 'LinkedIn', href: 'https://linkedin.com' },
-                { label: 'YouTube', href: 'https://youtube.com' },
-                { label: 'X', href: 'https://x.com' },
+                { label: 'Facebook', href: cms.about_contact.social_facebook || 'https://facebook.com' },
+                { label: 'Instagram', href: cms.about_contact.social_instagram || 'https://instagram.com' },
+                { label: 'LinkedIn', href: cms.about_contact.social_linkedin || 'https://linkedin.com' },
+                { label: 'YouTube', href: cms.about_contact.social_youtube || 'https://youtube.com' },
+                { label: 'X', href: cms.about_contact.social_x || 'https://x.com' },
               ].map((social) => (
                 <a
                   key={social.label}

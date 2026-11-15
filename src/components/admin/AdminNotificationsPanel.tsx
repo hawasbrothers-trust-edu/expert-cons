@@ -1,4 +1,4 @@
-import { BellRing, Mail, Send } from 'lucide-react';
+import { BellRing, CheckCircle2, Mail, Send, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../lib/api';
@@ -39,14 +39,23 @@ export function AdminNotificationsPanel({
     setTesting(true);
     try {
       const target = cmsDraft.notifications.notification_email.trim() || 'alerts@expertconsu.com';
-      const entry = await api.sendTestNotification(target);
-      onLogsChange([entry, ...logs]);
-      onNotify(
-        t(
-          `تم إرسال إشعار تجريبي إلى ${target} بنجاح.`,
-          `Test notification triggered successfully to ${target}.`
-        )
-      );
+      const result = await api.sendTestNotification(target);
+      onLogsChange([result.log, ...logs]);
+      if (result.delivered) {
+        onNotify(
+          t(
+            `تم إرسال الإشعار التجريبي فعلياً عبر Web3Forms إلى (${target}).`,
+            `Real test email dispatched via Web3Forms (${result.apiMessage}).`
+          )
+        );
+      } else {
+        onNotify(
+          t(
+            `تم تسجيل المحاولة ولكن تعذر الإرسال عبر Web3Forms: ${result.apiMessage}`,
+            `Web3Forms dispatch error: ${result.apiMessage}`
+          )
+        );
+      }
     } finally {
       setTesting(false);
     }
@@ -61,24 +70,24 @@ export function AdminNotificationsPanel({
   }[] = [
     {
       key: 'alert_on_study_request',
-      ar: 'تنبيه عند كل دراسة جديدة',
-      en: 'Instant Alert on New Study Requests',
-      desc_ar: 'إرسال إشعار فوري عند إرسال أي عميل لطلب دراسة جدوى عبر المعالج.',
-      desc_en: 'Trigger an instant email alert whenever a client submits the Study Request Wizard.',
+      ar: 'تنبيه عند كل طلب دراسة جدوى جديد',
+      en: 'Instant Email on New Study Requests',
+      desc_ar: 'إرسال رسالة بريد إلكتروني فورية تتضمن بيانات العميل والمشروع والقطاع ورأس المال والتمويل.',
+      desc_en: 'Send an immediate Web3Forms email with client contact, sector, project name, capital, and funding status.',
     },
     {
       key: 'alert_on_booking',
-      ar: 'تنبيه عند كل موعد استشارة',
-      en: 'Instant Alert on New Consultation Bookings',
-      desc_ar: 'إرسال إشعار فوري عند حجز موعد استشارة جديد أونلاين أو بمقر الشركة.',
-      desc_en: 'Trigger an instant email alert for every newly booked consultation slot.',
+      ar: 'تنبيه عند كل حجز موعد استشارة',
+      en: 'Instant Email on New Consultation Bookings',
+      desc_ar: 'إرسال إشعار فوري يتضمن اسم العميل والهاتف والموضوع والتاريخ والوقت ونوع الاجتماع.',
+      desc_en: 'Send an immediate Web3Forms email with client name, phone, topic, date, time, and meeting type.',
     },
     {
       key: 'alert_on_contact_message',
-      ar: 'تنبيه لرسائل اتصل بنا',
-      en: 'Instant Alert on Contact Messages',
-      desc_ar: 'إرسال إشعار فوري عند وصول رسالة من صفحة اتصل بنا أو استفسارات خطوط الإنتاج.',
-      desc_en: 'Trigger an instant alert when contact form or production line inquiries arrive.',
+      ar: 'تنبيه لرسائل صفحة اتصل بنا',
+      en: 'Instant Email on Contact Messages',
+      desc_ar: 'إرسال رسالة فورية عند وصول استفسار من صفحة اتصل بنا متضمنة الاسم والهاتف والموضوع والنص.',
+      desc_en: 'Send an immediate Web3Forms email with sender name, email, phone, subject, and message body.',
     },
   ];
 
@@ -91,13 +100,18 @@ export function AdminNotificationsPanel({
               <Mail className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
-              <h2 className="font-heading text-lg font-bold text-[#064E3B]">
-                {t('إعدادات البريد والتنبيهات الفورية', 'Email & Instant Notification Settings')}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-heading text-lg font-bold text-[#064E3B]">
+                  {t('إعدادات البريد والتنبيهات الفورية', 'Email & Instant Notification Settings')}
+                </h2>
+                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-[#059669] border border-emerald-200 text-[11px] font-bold">
+                  Web3Forms API
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
                 {t(
-                  'تحديد البريد العام للعملاء وبريد استقبال تنبيهات الطلبات والحجوزات الجديدة.',
-                  'Configure public contact email, alert recipient email, and instant notification triggers.'
+                  'ربط إرسال البريد الإلكتروني الفعلي عبر Web3Forms لطلبات الدراسات والمواعيد ورسائل التواصل.',
+                  'Configure public contact email, target alert inbox, and live Web3Forms email triggers.'
                 )}
               </p>
             </div>
@@ -107,10 +121,14 @@ export function AdminNotificationsPanel({
             type="button"
             onClick={handleTestTrigger}
             disabled={testing}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#064E3B] hover:bg-[#059669] text-white text-xs sm:text-sm font-semibold cursor-pointer shrink-0 transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#064E3B] hover:bg-[#059669] disabled:opacity-60 text-white text-xs sm:text-sm font-semibold cursor-pointer shrink-0 transition-colors"
           >
             <Send className="w-4 h-4" aria-hidden="true" />
-            <span>{testing ? t('جاري الإرسال...', 'Sending...') : t('إرسال إشعار تجريبي', 'Trigger Test Notification')}</span>
+            <span>
+              {testing
+                ? t('جاري الإرسال الفعلي...', 'Sending Live Email...')
+                : t('إرسال إشعار تجريبي الآن', 'Send Test Notification Now')}
+            </span>
           </button>
         </div>
 
@@ -132,7 +150,7 @@ export function AdminNotificationsPanel({
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#059669]"
             />
             <p className="text-[11px] text-slate-500 mt-1">
-              {t('يظهر تلقائياً في الفوتر وصفحة اتصل بنا.', 'Automatically shown in the public Footer and Contact page.')}
+              {t('يظهر تلقائياً في الهيدر والفوتر وصفحة اتصل بنا.', 'Automatically shown in the Header, Footer, and Contact page.')}
             </p>
           </div>
 
@@ -141,7 +159,7 @@ export function AdminNotificationsPanel({
               htmlFor="cms-alert-email"
               className="block text-xs font-semibold text-slate-700 mb-1.5"
             >
-              {t('بريد استلام إشعارات الطلبات الجديدة', 'Alert Recipient Email for New Submissions')}
+              {t('بريد استلام إشعارات الطلبات', 'Order & Alert Recipient Email')}
             </label>
             <input
               id="cms-alert-email"
@@ -153,7 +171,7 @@ export function AdminNotificationsPanel({
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-[#059669]"
             />
             <p className="text-[11px] text-slate-500 mt-1">
-              {t('تُرسل إليه التنبيهات الفورية عند تفعيل المفاتيح أدناه.', 'Receives instant notifications when the switches below are enabled.')}
+              {t('البريد المستهدف لتضمينه في إشعارات الطلبات والحجوزات عبر Web3Forms.', 'Target inbox referenced in instant Web3Forms notification dispatches.')}
             </p>
           </div>
         </div>
@@ -198,23 +216,44 @@ export function AdminNotificationsPanel({
         <div className="flex items-center gap-2">
           <BellRing className="w-4 h-4 text-[#059669]" aria-hidden="true" />
           <h3 className="font-heading text-base font-bold text-slate-900">
-            {t('سجل التنبيهات الفورية المرسلة', 'Instant Notification Dispatch Log')}
+            {t('سجل التنبيهات الفورية المرسلة (Web3Forms)', 'Instant Web3Forms Email Dispatch Log')}
           </h3>
         </div>
         {logs.length === 0 ? (
           <p className="text-xs text-slate-500 py-4">
             {t(
-              'لا توجد إشعارات مسجلة بعد. اضغط "إرسال إشعار تجريبي" لاختبار القناة.',
-              'No notifications logged yet. Click "Trigger Test Notification" to verify.'
+              'لا توجد إشعارات مسجلة بعد. اضغط "إرسال إشعار تجريبي الآن" للتحقق من الإرسال الفعلي.',
+              'No notifications logged yet. Click "Send Test Notification Now" to verify live delivery.'
             )}
           </p>
         ) : (
           <div className="divide-y divide-slate-100">
-            {logs.slice(0, 10).map((log) => (
-              <div key={log.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                <div>
-                  <p className="font-bold text-slate-900">{log.subject}</p>
-                  <p className="text-slate-600 mt-0.5">{log.details}</p>
+            {logs.slice(0, 12).map((log) => (
+              <div
+                key={log.id}
+                className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+              >
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-bold text-slate-900">{log.subject}</p>
+                    {log.delivery_status === 'failed' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-50 text-red-700 font-semibold text-[11px]">
+                        <XCircle className="w-3 h-3" aria-hidden="true" />
+                        <span>{t('فشل الإرسال', 'Failed')}</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-[#059669] font-semibold text-[11px]">
+                        <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+                        <span>{t('تم الإرسال الفعلي', 'Delivered')}</span>
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-600">{log.details}</p>
+                  {log.api_message && (
+                    <p className="text-[11px] text-slate-400" dir="ltr">
+                      Web3Forms: {log.api_message}
+                    </p>
+                  )}
                 </div>
                 <div className="text-slate-500 tabular-nums shrink-0 text-end">
                   <p className="font-semibold text-[#059669]" dir="ltr">

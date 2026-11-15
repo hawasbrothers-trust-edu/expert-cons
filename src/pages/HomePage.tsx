@@ -55,52 +55,18 @@ export function HomePage() {
 
   const stats = cms.metrics;
 
-  const whyExpert = [
-    {
-      num: '01.',
-      icon: Landmark,
-      title_ar: 'دراسات معتمدة لدى 52+ جهة تمويل',
-      title_en: 'Accepted by 52+ Banks & Funds',
-      desc_ar:
-        'تُعد ملفاتنا المالية وفق متطلبات اللجان الائتمانية في البنوك المصرية والخليجية وصناديق التنمية الصناعية.',
-      desc_en:
-        'Financial models are built strictly to credit-committee standards across Egyptian, Gulf, and development institutions.',
-      span: 'lg:col-span-2',
-    },
-    {
-      num: '02.',
-      icon: ShieldCheck,
-      title_ar: 'منهجية مزدوجة: مالي + هندسي',
-      title_en: 'Dual Financial & Engineering Audit',
-      desc_ar:
-        'يراجع كل دراسة خبير اقتصادي ومهندس قطاعي لضمان واقعية عروض خطوط الإنتاج والطاقات التشغيلية.',
-      desc_en:
-        'Every study undergoes dual review by a financial analyst and sector engineer to verify machinery and OPEX quotes.',
-      span: 'lg:col-span-1',
-    },
-    {
-      num: '03.',
-      icon: Factory,
-      title_ar: 'توفير خطوط الإنتاج من الموردين',
-      title_en: 'Turnkey Production Line Sourcing',
-      desc_ar:
-        'نربط المستثمر مباشرة بمصانع المعدات في أوروبا وآسيا والشرق الأوسط مع مقارنة فنية وسعرية شفافة.',
-      desc_en:
-        'Direct access to vetted machinery manufacturers in Europe, Asia, and MENA with comparative technical quotes.',
-      span: 'lg:col-span-1',
-    },
-    {
-      num: '04.',
-      icon: TrendingUp,
-      title_ar: 'تحليل حساسية يحمي رأس المال',
-      title_en: 'Sensitivity Stress-Testing',
-      desc_ar:
-        'نختبر جدوى مشروعك أمام تقلبات أسعار الصرف والتضخم والتغيرات السوقية بثلاثة سيناريوهات تشغيلية واضحة.',
-      desc_en:
-        'We stress-test your venture against FX shifts, raw material swings, and demand changes across 3 scenarios.',
-      span: 'lg:col-span-2',
-    },
+  const valuePropStyles = [
+    { icon: Landmark, span: 'lg:col-span-2' },
+    { icon: ShieldCheck, span: 'lg:col-span-1' },
+    { icon: Factory, span: 'lg:col-span-1' },
+    { icon: TrendingUp, span: 'lg:col-span-2' },
   ];
+
+  const whyExpert = cms.hero.value_props.map((vp, idx) => ({
+    ...vp,
+    icon: valuePropStyles[idx]?.icon || Landmark,
+    span: valuePropStyles[idx]?.span || 'lg:col-span-1',
+  }));
 
   const workflow = [
     {

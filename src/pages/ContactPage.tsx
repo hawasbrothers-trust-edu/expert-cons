@@ -129,11 +129,11 @@ export function ContactPage() {
                 <div className="flex flex-wrap gap-2">
                   {[
                     { name: 'WhatsApp', href: `https://wa.me/${whatsappDigits}` },
-                    { name: 'Facebook', href: 'https://facebook.com' },
-                    { name: 'Instagram', href: 'https://instagram.com' },
-                    { name: 'LinkedIn', href: 'https://linkedin.com' },
-                    { name: 'YouTube', href: 'https://youtube.com' },
-                    { name: 'Twitter / X', href: 'https://x.com' },
+                    { name: 'Facebook', href: cms.about_contact.social_facebook || 'https://facebook.com' },
+                    { name: 'Instagram', href: cms.about_contact.social_instagram || 'https://instagram.com' },
+                    { name: 'LinkedIn', href: cms.about_contact.social_linkedin || 'https://linkedin.com' },
+                    { name: 'YouTube', href: cms.about_contact.social_youtube || 'https://youtube.com' },
+                    { name: 'Twitter / X', href: cms.about_contact.social_x || 'https://x.com' },
                   ].map((s) => (
                     <a
                       key={s.name}

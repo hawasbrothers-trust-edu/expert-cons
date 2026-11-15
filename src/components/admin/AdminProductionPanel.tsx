@@ -277,21 +277,65 @@ export function AdminProductionPanel({
                         type="text"
                         value={line.capacity_ar}
                         onChange={(e) => updateLineField(line.id, 'capacity_ar', e.target.value)}
-                        placeholder="الطاقة الإنتاجية"
+                        placeholder="الطاقة (عربي)"
                         className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px]"
                       />
                       <input
                         type="text"
+                        dir="ltr"
+                        value={line.capacity_en}
+                        onChange={(e) => updateLineField(line.id, 'capacity_en', e.target.value)}
+                        placeholder="Capacity (EN)"
+                        className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px]"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <input
+                        type="text"
                         value={line.price_ar || ''}
                         onChange={(e) => updateLineField(line.id, 'price_ar', e.target.value)}
-                        placeholder="السعر / التكلفة"
+                        placeholder="السعر (عربي)"
                         className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] text-[#064E3B] font-semibold"
+                      />
+                      <input
+                        type="text"
+                        dir="ltr"
+                        value={line.price_en || ''}
+                        onChange={(e) => updateLineField(line.id, 'price_en', e.target.value)}
+                        placeholder="Price (EN)"
+                        className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px] text-[#064E3B] font-semibold"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <input
+                        type="text"
+                        value={line.origin_ar}
+                        onChange={(e) => updateLineField(line.id, 'origin_ar', e.target.value)}
+                        placeholder="المنشأ (عربي)"
+                        className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px]"
+                      />
+                      <input
+                        type="text"
+                        dir="ltr"
+                        value={line.origin_en}
+                        onChange={(e) => updateLineField(line.id, 'origin_en', e.target.value)}
+                        placeholder="Origin (EN)"
+                        className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px]"
                       />
                     </div>
                     <textarea
                       rows={2}
                       value={line.description_ar}
                       onChange={(e) => updateLineField(line.id, 'description_ar', e.target.value)}
+                      placeholder="الوصف (عربي)"
+                      className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px]"
+                    />
+                    <textarea
+                      rows={2}
+                      dir="ltr"
+                      value={line.description_en}
+                      onChange={(e) => updateLineField(line.id, 'description_en', e.target.value)}
+                      placeholder="Description (EN)"
                       className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-[11px]"
                     />
                   </div>

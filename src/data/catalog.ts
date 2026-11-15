@@ -1620,6 +1620,44 @@ export const DEFAULT_SITE_CMS_CONFIG: SiteCmsConfig = {
     why_subtitle_en: 'Strategic Advisory Edge',
     why_title_ar: 'لماذا يختار المستثمرون شركة EXPERT؟',
     why_title_en: 'Why Investors Choose EXPERT',
+    value_props: [
+      {
+        num: '01.',
+        title_ar: 'دراسات معتمدة لدى 52+ جهة تمويل',
+        title_en: 'Accepted by 52+ Banks & Funds',
+        desc_ar:
+          'تُعد ملفاتنا المالية وفق متطلبات اللجان الائتمانية في البنوك المصرية والخليجية وصناديق التنمية الصناعية.',
+        desc_en:
+          'Financial models are built strictly to credit-committee standards across Egyptian, Gulf, and development institutions.',
+      },
+      {
+        num: '02.',
+        title_ar: 'منهجية مزدوجة: مالي + هندسي',
+        title_en: 'Dual Financial & Engineering Audit',
+        desc_ar:
+          'يراجع كل دراسة خبير اقتصادي ومهندس قطاعي لضمان واقعية عروض خطوط الإنتاج والطاقات التشغيلية.',
+        desc_en:
+          'Every study undergoes dual review by a financial analyst and sector engineer to verify machinery and OPEX quotes.',
+      },
+      {
+        num: '03.',
+        title_ar: 'توفير خطوط الإنتاج من الموردين',
+        title_en: 'Turnkey Production Line Sourcing',
+        desc_ar:
+          'نربط المستثمر مباشرة بمصانع المعدات في أوروبا وآسيا والشرق الأوسط مع مقارنة فنية وسعرية شفافة.',
+        desc_en:
+          'Direct access to vetted machinery manufacturers in Europe, Asia, and MENA with comparative technical quotes.',
+      },
+      {
+        num: '04.',
+        title_ar: 'تحليل حساسية يحمي رأس المال',
+        title_en: 'Sensitivity Stress-Testing',
+        desc_ar:
+          'نختبر جدوى مشروعك أمام تقلبات أسعار الصرف والتضخم والتغيرات السوقية بثلاثة سيناريوهات تشغيلية واضحة.',
+        desc_en:
+          'We stress-test your venture against FX shifts, raw material swings, and demand changes across 3 scenarios.',
+      },
+    ],
     welcome_badge_ar: 'تقييم مبدئي مجاني لفكرتك',
     welcome_badge_en: 'Complimentary Initial Assessment',
     welcome_title_ar: 'جاهز لإطلاق مشروعك على أسس اقتصادية راسخة؟',
@@ -1675,6 +1713,11 @@ export const DEFAULT_SITE_CMS_CONFIG: SiteCmsConfig = {
     whatsapp_number: '201142464520',
     address_ar: 'بني سويف، جمهورية مصر العربية',
     address_en: 'Beni Suef, Arab Republic of Egypt',
+    social_facebook: 'https://facebook.com',
+    social_instagram: 'https://instagram.com',
+    social_linkedin: 'https://linkedin.com',
+    social_youtube: 'https://youtube.com',
+    social_x: 'https://x.com',
   },
   notifications: {
     public_contact_email: 'info@expertconsu.com',

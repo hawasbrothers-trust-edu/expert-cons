@@ -392,7 +392,7 @@ export function AdminDashboardPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Floating Sticky Operations & Save All Bar */}
-        <div className="sticky top-[74px] z-30 bg-white/95 backdrop-blur-md rounded-2xl border border-emerald-200/80 shadow-md px-5 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="sticky top-[98px] z-30 bg-white/95 backdrop-blur-md rounded-2xl border border-emerald-200/80 shadow-md px-5 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#064E3B] to-[#059669] text-[#D4AF37] flex items-center justify-center shrink-0">
               <Shield className="w-5 h-5" aria-hidden="true" />

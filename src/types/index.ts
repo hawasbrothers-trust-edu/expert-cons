@@ -193,6 +193,14 @@ export interface ServiceCmsItem {
   icon: string;
 }
 
+export interface HeroValuePropItem {
+  num: string;
+  title_ar: string;
+  title_en: string;
+  desc_ar: string;
+  desc_en: string;
+}
+
 export interface HeroCmsContent {
   badge_ar: string;
   badge_en: string;
@@ -208,6 +216,7 @@ export interface HeroCmsContent {
   why_subtitle_en: string;
   why_title_ar: string;
   why_title_en: string;
+  value_props: HeroValuePropItem[];
   welcome_badge_ar: string;
   welcome_badge_en: string;
   welcome_title_ar: string;
@@ -235,6 +244,11 @@ export interface AboutContactCmsConfig {
   whatsapp_number: string;
   address_ar: string;
   address_en: string;
+  social_facebook: string;
+  social_instagram: string;
+  social_linkedin: string;
+  social_youtube: string;
+  social_x: string;
 }
 
 export interface NotificationSettingsConfig {
@@ -251,6 +265,8 @@ export interface NotificationAlertLog {
   recipient_email: string;
   subject: string;
   details: string;
+  delivery_status?: 'delivered' | 'failed';
+  api_message?: string;
   created_at: string;
 }
 
