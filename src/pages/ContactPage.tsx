@@ -1,11 +1,13 @@
 import { CheckCircle2, Mail, MapPin, MessageCircle, Phone } from 'lucide-react';
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useSiteCms } from '../context/SiteCmsContext';
 import { api } from '../lib/api';
 import { validateContactForm, type ContactDraft } from '../utils/validation';
 
 export function ContactPage() {
   const { t } = useLanguage();
+  const { cms } = useSiteCms();
   const [form, setForm] = useState<ContactDraft>({
     name: '',
     email: '',
@@ -35,22 +37,31 @@ export function ContactPage() {
     }
   };
 
+  const whatsappDigits = cms.about_contact.whatsapp_number.replace(/[^\d]/g, '') || '201142464520';
+
   return (
     <div className="py-12 lg:py-16 bg-[#F8FAFC]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-        <div className="bg-white rounded-2xl border border-slate-200/70 p-8 sm:p-10">
-          <p className="text-xs font-semibold text-[#059669] mb-2">
-            {t('اتصل بنا', 'Get in Touch')}
-          </p>
-          <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-[#064E3B] mb-3">
-            {t('تواصل مع شركة EXPERT للاستشارات الاقتصادية', 'Contact EXPERT Economic Consultation')}
-          </h1>
-          <p className="text-base text-slate-600 max-w-2xl">
-            {t(
-              'فريقنا مستعد للرد على استفساراتكم حول دراسات الجدوى وخطوط الإنتاج وشراكات التمويل في مصر والعالم العربي.',
-              'Our advisory desk is ready to answer inquiries on feasibility studies, production lines, and regional project funding.'
-            )}
-          </p>
+        <div className="bg-white rounded-2xl border border-slate-200/70 p-8 sm:p-10 space-y-6">
+          <div>
+            <p className="text-xs font-semibold text-[#059669] mb-2">
+              {t('اتصل بنا ومن نحن', 'Get in Touch & About EXPERT')}
+            </p>
+            <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-[#064E3B] mb-3">
+              {t('تواصل مع شركة EXPERT للاستشارات الاقتصادية', 'Contact EXPERT Economic Consultation')}
+            </h1>
+            <p className="text-base text-slate-600 max-w-3xl leading-relaxed">
+              {t(cms.about_contact.story_ar, cms.about_contact.story_en)}
+            </p>
+          </div>
+          <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/70">
+            <p className="text-xs font-bold text-[#064E3B] mb-1">
+              {t('رسالتنا الاستشارية', 'Our Advisory Mission')}
+            </p>
+            <p className="text-sm text-slate-700 leading-relaxed">
+              {t(cms.about_contact.mission_ar, cms.about_contact.mission_en)}
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -67,22 +78,33 @@ export function ContactPage() {
                   <div>
                     <p className="font-semibold text-white">{t('المقر الرئيسي', 'Headquarters')}</p>
                     <p className="text-emerald-100/85">
-                      {t('بني سويف، جمهورية مصر العربية', 'Beni Suef, Arab Republic of Egypt')}
+                      {t(cms.about_contact.address_ar, cms.about_contact.address_en)}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <Phone className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" aria-hidden="true" />
-                  <div>
+                  <div className="space-y-1">
                     <p className="font-semibold text-white">{t('الهاتف والواتساب', 'Phone & WhatsApp')}</p>
-                    <a
-                      href="tel:+201142464520"
-                      dir="ltr"
-                      className="text-emerald-100/90 hover:text-[#D4AF37] tabular-nums"
-                    >
-                      +201142464520
-                    </a>
+                    <div>
+                      <a
+                        href={`tel:${cms.about_contact.phone_primary}`}
+                        dir="ltr"
+                        className="text-emerald-100/90 hover:text-[#D4AF37] tabular-nums block"
+                      >
+                        {cms.about_contact.phone_primary}
+                      </a>
+                      {cms.about_contact.phone_secondary && (
+                        <a
+                          href={`tel:${cms.about_contact.phone_secondary}`}
+                          dir="ltr"
+                          className="text-emerald-100/80 hover:text-[#D4AF37] tabular-nums block text-xs"
+                        >
+                          {cms.about_contact.phone_secondary}
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -91,10 +113,10 @@ export function ContactPage() {
                   <div>
                     <p className="font-semibold text-white">{t('البريد الإلكتروني الرسمي', 'Official Email')}</p>
                     <a
-                      href="mailto:info@expertconsu.com"
+                      href={`mailto:${cms.notifications.public_contact_email}`}
                       className="text-emerald-100/90 hover:text-[#D4AF37]"
                     >
-                      info@expertconsu.com
+                      {cms.notifications.public_contact_email}
                     </a>
                   </div>
                 </div>
@@ -106,7 +128,7 @@ export function ContactPage() {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { name: 'WhatsApp', href: 'https://wa.me/201142464520' },
+                    { name: 'WhatsApp', href: `https://wa.me/${whatsappDigits}` },
                     { name: 'Facebook', href: 'https://facebook.com' },
                     { name: 'Instagram', href: 'https://instagram.com' },
                     { name: 'LinkedIn', href: 'https://linkedin.com' },
@@ -127,7 +149,7 @@ export function ContactPage() {
               </div>
 
               <a
-                href="https://wa.me/201142464520"
+                href={`https://wa.me/${whatsappDigits}`}
                 target="_blank"
                 rel="noreferrer"
                 className="w-full py-3 px-4 rounded-xl bg-[#059669] hover:bg-emerald-500 text-white text-sm font-bold inline-flex items-center justify-center gap-2 transition-colors"

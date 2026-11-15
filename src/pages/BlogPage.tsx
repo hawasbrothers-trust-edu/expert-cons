@@ -1,4 +1,4 @@
-import { BookOpen, Clock, Search, X } from 'lucide-react';
+import { BookOpen, Clock, Search, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -14,7 +14,16 @@ export function BlogPage() {
   const [activePost, setActivePost] = useState<BlogPost | null>(null);
 
   useEffect(() => {
-    api.listBlogPosts().then(setPosts);
+    const loadPosts = () => {
+      api.listBlogPosts().then(setPosts);
+    };
+    loadPosts();
+    window.addEventListener('expert:blog-updated', loadPosts);
+    window.addEventListener('storage', loadPosts);
+    return () => {
+      window.removeEventListener('expert:blog-updated', loadPosts);
+      window.removeEventListener('storage', loadPosts);
+    };
   }, []);
 
   const categories: { id: BlogCategory | 'all'; ar: string; en: string }[] = [
@@ -98,13 +107,28 @@ export function BlogPage() {
                 className="bg-white rounded-2xl border border-slate-200/70 overflow-hidden flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 hover:border-[#059669]/50"
               >
                 <div>
-                  <div className="h-36 bg-gradient-to-br from-[#064E3B] to-[#059669] p-6 flex items-end">
-                    <span className="text-xs font-semibold text-[#D4AF37]">
-                      {categoryLabel(post.category)}
-                    </span>
-                  </div>
+                  {post.image_url ? (
+                    <div className="h-44 relative overflow-hidden bg-slate-900">
+                      <img
+                        src={post.image_url}
+                        alt={t(post.title_ar, post.title_en)}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
+                      <span className="absolute bottom-3 start-4 text-xs font-semibold text-[#D4AF37] bg-slate-950/60 px-2.5 py-1 rounded-lg backdrop-blur-xs">
+                        {categoryLabel(post.category)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="h-36 bg-gradient-to-br from-[#064E3B] to-[#059669] p-6 flex items-end">
+                      <span className="text-xs font-semibold text-[#D4AF37]">
+                        {categoryLabel(post.category)}
+                      </span>
+                    </div>
+                  )}
                   <div className="p-6">
-                    <div className="flex items-center gap-2 text-xs text-slate-500 mb-3 tabular-nums">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mb-3 tabular-nums">
                       <span>{post.created_at}</span>
                       <span aria-hidden="true">·</span>
                       <span className="inline-flex items-center gap-1">
@@ -115,9 +139,15 @@ export function BlogPage() {
                     <h2 className="font-heading text-lg font-bold text-slate-900 mb-2 leading-snug">
                       {t(post.title_ar, post.title_en)}
                     </h2>
-                    <p className="text-sm text-slate-600 leading-relaxed">
+                    <p className="text-sm text-slate-600 leading-relaxed mb-3">
                       {t(post.excerpt_ar, post.excerpt_en)}
                     </p>
+                    {(post.author_ar || post.author_en) && (
+                      <p className="text-xs text-slate-500 inline-flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5 text-[#059669]" aria-hidden="true" />
+                        <span>{t(post.author_ar || '', post.author_en || '')}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="px-6 pb-6 pt-3 border-t border-slate-100">
@@ -146,10 +176,18 @@ export function BlogPage() {
           <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 sm:p-8 shadow-xl">
             <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-100 mb-5">
               <div>
-                <div className="flex items-center gap-2 text-xs text-[#059669] font-semibold mb-2">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-[#059669] font-semibold mb-2">
                   <span>{categoryLabel(activePost.category)}</span>
                   <span aria-hidden="true">·</span>
                   <span className="tabular-nums">{activePost.created_at}</span>
+                  {(activePost.author_ar || activePost.author_en) && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="text-slate-600">
+                        {t(activePost.author_ar || '', activePost.author_en || '')}
+                      </span>
+                    </>
+                  )}
                 </div>
                 <h2 id="blog-modal-title" className="font-heading text-xl sm:text-2xl font-bold text-[#064E3B]">
                   {t(activePost.title_ar, activePost.title_en)}
@@ -164,6 +202,16 @@ export function BlogPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+            {activePost.image_url && (
+              <div className="mb-5 rounded-xl overflow-hidden max-h-64 bg-slate-100">
+                <img
+                  src={activePost.image_url}
+                  alt={t(activePost.title_ar, activePost.title_en)}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             <div className="space-y-4 text-sm sm:text-base text-slate-700 leading-relaxed whitespace-pre-line">
               {t(activePost.content_ar, activePost.content_en)}
             </div>

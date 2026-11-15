@@ -1,12 +1,15 @@
 import { MessageCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useSiteCms } from '../context/SiteCmsContext';
 
 export function WhatsAppFloat() {
   const { isRtl, t } = useLanguage();
+  const { cms } = useSiteCms();
+  const digits = cms.about_contact.whatsapp_number.replace(/[^\d]/g, '') || '201142464520';
 
   return (
     <a
-      href="https://wa.me/201142464520"
+      href={`https://wa.me/${digits}`}
       target="_blank"
       rel="noreferrer"
       aria-label={t('تواصل عبر واتساب مع EXPERT', 'Chat with EXPERT on WhatsApp')}

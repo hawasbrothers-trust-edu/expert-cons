@@ -1,4 +1,5 @@
 import type {
+  AdminProfileConfig,
   Appointment,
   BlogPost,
   ClientDocument,
@@ -8,6 +9,7 @@ import type {
   ProductionLineTabMeta,
   Review,
   SectorId,
+  SiteCmsConfig,
   StudyRequest,
   StudyTypeId,
 } from '../types';
@@ -1373,6 +1375,8 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     content_en:
       'Credit committees reject many viable industrial projects not because the concept is weak, but because the feasibility dossier lacks bank-grade rigor.\n\nFirst, market assumptions must prove a measurable supply-demand gap with verified figures. Second, capital expenditure needs live vendor quotes for machinery and utilities. Third, Debt Service Coverage Ratio (DSCR) should comfortably exceed 1.35x across the loan tenor. Fourth, a rigorous sensitivity stress test must prove debt resilience under a 15% revenue dip or input cost spike.\n\nAt EXPERT, every bankable study is structured specifically around these credit-committee benchmarks.',
     category: 'funding',
+    author_ar: 'د. بدر حواس — المؤسس والمستشار الاقتصادي',
+    author_en: 'Dr. Badr Hawas — Founder & Lead Economist',
     read_minutes: 6,
     image_url: '',
     created_at: '2026-11-08',
@@ -1390,6 +1394,8 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     content_en:
       'Choosing a production line is the single highest-impact capital decision for any manufacturing plant. Focusing strictly on upfront price without calculating Total Cost of Ownership (TCO) often erodes margins in year two.\n\nWhen EXPERT benchmarks machinery quotes, we evaluate four pillars: energy draw per produced ton, expected scrap rate and local spare-part availability, Overall Equipment Effectiveness (OEE), and performance-bonded commissioning terms before final supplier payment.',
     category: 'feasibility',
+    author_ar: 'م. عمر الشهابي — رئيس القطاع الهندسي',
+    author_en: 'Eng. Omar El-Shehaby — Head of Engineering',
     read_minutes: 5,
     image_url: '',
     created_at: '2026-11-02',
@@ -1407,6 +1413,8 @@ export const SEED_BLOG_POSTS: BlogPost[] = [
     content_en:
       'Scaling through franchising requires turning founder intuition into repeatable operating systems that maintain uniform quality across borders.\n\nThe roadmap starts with proving unit economics—ensuring each outlet generates healthy returns even after franchise royalties. Next comes documenting Standard Operating Procedures (SOPs), centralizing supply chain quality, and securing trademark protection prior to regional rollout.',
     category: 'entrepreneurship',
+    author_ar: 'أ. سلمى المنصوري — مستشارة الامتياز التجاري',
+    author_en: 'Salma El-Mansouri — Franchise Advisory Lead',
     read_minutes: 7,
     image_url: '',
     created_at: '2026-10-25',
@@ -1587,3 +1595,99 @@ export const SEED_CLIENT_MESSAGES: ClientPortalMessage[] = [
     created_at: '2026-11-14 16:05',
   },
 ];
+
+export const DEFAULT_ADMIN_PROFILE: AdminProfileConfig = {
+  display_name: 'مدير النظام — EXPERT',
+  admin_email: 'admin@expertconsu.com',
+  updated_at: '2026-11-14T00:00:00Z',
+};
+
+export const DEFAULT_SITE_CMS_CONFIG: SiteCmsConfig = {
+  hero: {
+    badge_ar: 'مصر والشرق الأوسط · دراسات جدوى معتمدة · خطوط إنتاج · جهات تمويل',
+    badge_en: 'Egypt & MENA · Bankable Feasibility Studies · Production Lines · Funding Network',
+    headline_ar: 'الشريك الاستراتيجي لنجاح مشروعك',
+    headline_en: 'Your Strategic Partner for Project Success',
+    subheading_ar:
+      'نحول رؤيتك الاستثمارية إلى مشروع صناعي أو تجاري قابل للتنفيذ والتمويل، عبر دراسات جدوى اقتصادية دقيقة، تأمين خطوط الإنتاج العالمية، وربط مباشر بأكثر من 52 بنكاً وصندوقاً تمويلياً.',
+    subheading_en:
+      'We transform investment ideas into bankable industrial and commercial ventures through precision feasibility studies, vetted production lines, and direct access to 52+ regional banks and development funds.',
+    cta_primary_ar: 'اطلب دراستك الآن',
+    cta_primary_en: 'Request Your Study Now',
+    cta_secondary_ar: 'احجز استشارة مجانية',
+    cta_secondary_en: 'Book Free Consultation',
+    why_subtitle_ar: 'القيمة الاستشارية المضافة',
+    why_subtitle_en: 'Strategic Advisory Edge',
+    why_title_ar: 'لماذا يختار المستثمرون شركة EXPERT؟',
+    why_title_en: 'Why Investors Choose EXPERT',
+    welcome_badge_ar: 'تقييم مبدئي مجاني لفكرتك',
+    welcome_badge_en: 'Complimentary Initial Assessment',
+    welcome_title_ar: 'جاهز لإطلاق مشروعك على أسس اقتصادية راسخة؟',
+    welcome_title_en: 'Ready to Launch Your Venture on Verified Economics?',
+    welcome_desc_ar:
+      'ابدأ معالج طلب الدراسة الذكي في دقيقتين أو احجز جلسة مباشرة مع مستشارينا لمناقشة التمويل وخطوط الإنتاج.',
+    welcome_desc_en:
+      'Complete our 2-minute Smart Study Request Wizard or book a live session with our consultants to plan funding and equipment.',
+  },
+  metrics: [
+    { key: 'studies', target: 5000, label_ar: 'دراسة جدوى معتمدة', label_en: 'Approved Feasibility Studies' },
+    { key: 'requests', target: 95000, label_ar: 'طلب خدمة واستشارة', label_en: 'Advisory & Service Requests' },
+    { key: 'experts', target: 350, label_ar: 'مستشار وخبير اقتصادي', label_en: 'Economic & Technical Experts' },
+    { key: 'countries', target: 22, label_ar: 'دولة عربية مخدومة', label_en: 'Arab Countries Served' },
+  ],
+  sectors: SECTORS.map((s) => ({
+    id: s.id,
+    name_ar: s.name_ar,
+    name_en: s.name_en,
+    description_ar: s.description_ar,
+    description_en: s.description_en,
+    price_ar: 'تبدأ من 15,000 ج.م',
+    price_en: 'From $950',
+  })),
+  services: SERVICES_LIST.map((srv) => ({
+    id: srv.id,
+    code: srv.code,
+    title_ar: srv.title_ar,
+    title_en: srv.title_en,
+    description_ar: srv.description_ar,
+    description_en: srv.description_en,
+    deliverable_ar: srv.deliverable_ar,
+    deliverable_en: srv.deliverable_en,
+    price_ar: 'حسب نطاق المشروع',
+    price_en: 'Custom Scope',
+    icon: srv.icon,
+  })),
+  about_contact: {
+    story_ar:
+      'تأسست شركة EXPERT (مؤسسة بدر حواس) لتكون الجسر التنفيذي بين الأفكار الاستثمارية الطموحة والتمويل المصرفي المعتمد، عبر فريق يضم أكثر من 350 خبيراً اقتصادياً ومهندساً قطاعياً في مصر والعالم العربي.',
+    story_en:
+      'Founded under the Badr Hawas Foundation, EXPERT bridges ambitious investment concepts and bankable institutional financing through 350+ economists and sector engineers across Egypt and MENA.',
+    mission_ar:
+      'تمكين رواد الأعمال والمصانع من اتخاذ قرارات استثمارية مبنية على بيانات سوقية حقيقية ونماذج مالية معتمدة لدى البنوك وصناديق التنمية.',
+    mission_en:
+      'Empowering founders and industrialists to deploy capital with confidence through verified market intelligence and credit-committee-ready financial models.',
+    footer_tagline_ar:
+      'شركة EXPERT للاستشارات الاقتصادية — شريكك الاستراتيجي في إعداد دراسات الجدوى المعتمدة، تأمين خطوط الإنتاج، وربط المشاريع بجهات التمويل في مصر والشرق الأوسط.',
+    footer_tagline_en:
+      'EXPERT Economic Consultation — your strategic partner for bankable feasibility studies, production line sourcing, and funding connections across Egypt and MENA.',
+    phone_primary: '+201142464520',
+    phone_secondary: '+201009876543',
+    whatsapp_number: '201142464520',
+    address_ar: 'بني سويف، جمهورية مصر العربية',
+    address_en: 'Beni Suef, Arab Republic of Egypt',
+  },
+  notifications: {
+    public_contact_email: 'info@expertconsu.com',
+    notification_email: 'alerts@expertconsu.com',
+    alert_on_study_request: true,
+    alert_on_booking: true,
+    alert_on_contact_message: true,
+  },
+  production_lines: PRODUCTION_LINES.map((pl) => ({
+    ...pl,
+    price_ar: 'عرض سعر مخصص',
+    price_en: 'Request Quote',
+  })),
+  production_tabs: PRODUCTION_LINE_TABS.map((tab) => ({ ...tab })),
+};
+

@@ -299,8 +299,18 @@ export function ClientPortalPage() {
               </div>
               <div className="text-sm font-semibold text-[#064E3B]">
                 {t('المرحلة الحالية:', 'Current Stage:')}{' '}
-                <span className="text-[#059669]">
-                  {t(STAGES[currentStageIndex].ar, STAGES[currentStageIndex].en)}
+                <span
+                  className={
+                    activeStudy.status === 'rejected' ? 'text-red-600' : 'text-[#059669]'
+                  }
+                >
+                  {activeStudy.status === 'rejected'
+                    ? t('مرفوض / يحتاج مراجعة', 'Declined / Needs Revision')
+                    : activeStudy.status === 'in_progress'
+                    ? t('قيد التنفيذ', 'In Progress')
+                    : activeStudy.status === 'completed'
+                    ? t('مكتمل', 'Completed')
+                    : t(STAGES[currentStageIndex].ar, STAGES[currentStageIndex].en)}
                 </span>
               </div>
             </div>

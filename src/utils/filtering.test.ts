@@ -2,13 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildWhatsAppUrl,
+  exportAppointmentsToCsv,
   exportRequestsToCsv,
+  filterAppointments,
   filterBlogPosts,
   filterFundingEntities,
+  filterStudyRequests,
   getStudyStageIndex,
   sortStudyRequests,
 } from './filtering';
-import type { BlogPost, FundingEntity, StudyRequest } from '../types';
+import type { Appointment, BlogPost, FundingEntity, StudyRequest } from '../types';
 
 const sampleEntities: FundingEntity[] = [
   {
@@ -84,6 +87,22 @@ const sampleRequests: StudyRequest[] = [
   },
 ];
 
+const sampleAppointments: Appointment[] = [
+  {
+    id: 'apt1',
+    name: 'محمود كريم',
+    phone: '01012345678',
+    email: 'mahmoud@example.com',
+    topic: 'تمويل مصنع تعبئة',
+    date: '2026-11-20',
+    time: '12:00',
+    duration: 30,
+    type: 'online',
+    status: 'confirmed',
+    created_at: '2026-11-12T09:00:00Z',
+  },
+];
+
 test('filterFundingEntities filters by category and search query', () => {
   assert.equal(filterFundingEntities(sampleEntities, 'all', '').length, 2);
   assert.equal(filterFundingEntities(sampleEntities, 'egyptian', '').length, 1);
@@ -96,10 +115,13 @@ test('filterBlogPosts filters by category and query', () => {
   assert.equal(filterBlogPosts(samplePosts, 'marketing', '').length, 0);
 });
 
-test('getStudyStageIndex maps 5 workflow stages accurately', () => {
+test('getStudyStageIndex maps 5 workflow stages and extended statuses accurately', () => {
   assert.equal(getStudyStageIndex('received'), 0);
+  assert.equal(getStudyStageIndex('in_progress'), 2);
   assert.equal(getStudyStageIndex('preparing'), 2);
+  assert.equal(getStudyStageIndex('completed'), 4);
   assert.equal(getStudyStageIndex('delivered'), 4);
+  assert.equal(getStudyStageIndex('rejected'), 0);
 });
 
 test('sortStudyRequests sorts by date and status', () => {
@@ -110,13 +132,26 @@ test('sortStudyRequests sorts by date and status', () => {
   assert.equal(byStageAsc[0].id, 'r1');
 });
 
+test('filterStudyRequests and filterAppointments filter by query and status', () => {
+  assert.equal(filterStudyRequests(sampleRequests, 'الشفاء', 'all').length, 1);
+  assert.equal(filterStudyRequests(sampleRequests, '', 'delivered').length, 1);
+  assert.equal(filterStudyRequests(sampleRequests, 'طارق', 'delivered').length, 0);
+
+  assert.equal(filterAppointments(sampleAppointments, 'تعبئة', 'confirmed').length, 1);
+  assert.equal(filterAppointments(sampleAppointments, '', 'pending').length, 0);
+});
+
 test('buildWhatsAppUrl normalizes Egyptian local phone numbers', () => {
   const url = buildWhatsAppUrl('01142464520', 'مرحبا');
   assert.ok(url.startsWith('https://wa.me/201142464520?text='));
 });
 
-test('exportRequestsToCsv outputs CSV headers and escaped rows', () => {
+test('exportRequestsToCsv and exportAppointmentsToCsv output CSV headers and escaped rows', () => {
   const csv = exportRequestsToCsv(sampleRequests);
   assert.ok(csv.includes('Project Name'));
   assert.ok(csv.includes('ألفا للصناعات'));
+
+  const aptCsv = exportAppointmentsToCsv(sampleAppointments);
+  assert.ok(aptCsv.includes('Client Name'));
+  assert.ok(aptCsv.includes('تمويل مصنع تعبئة'));
 });

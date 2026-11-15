@@ -2,11 +2,13 @@ import { CheckCircle2, Mail, MapPin, Phone } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { useSiteCms } from '../context/SiteCmsContext';
 import { validateEmail } from '../utils/validation';
 import { BrandLogo } from './BrandLogo';
 
 export function Footer() {
   const { t } = useLanguage();
+  const { cms } = useSiteCms();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'error' | 'subscribed'>('idle');
 
@@ -20,6 +22,8 @@ export function Footer() {
     setEmail('');
   };
 
+  const whatsappDigits = cms.about_contact.whatsapp_number.replace(/[^\d]/g, '') || '201142464520';
+
   return (
     <footer className="bg-[#064E3B] text-white border-t border-emerald-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
@@ -28,14 +32,11 @@ export function Footer() {
           <div className="space-y-4">
             <BrandLogo variant="footer" />
             <p className="text-sm text-emerald-100/90 leading-relaxed">
-              {t(
-                'شركة EXPERT للاستشارات الاقتصادية — شريكك الاستراتيجي في إعداد دراسات الجدوى المعتمدة، تأمين خطوط الإنتاج، وربط المشاريع بجهات التمويل في مصر والشرق الأوسط.',
-                'EXPERT Economic Consultation — your strategic partner for bankable feasibility studies, production line sourcing, and funding connections across Egypt and MENA.'
-              )}
+              {t(cms.about_contact.footer_tagline_ar, cms.about_contact.footer_tagline_en)}
             </p>
             <div className="flex items-center gap-2 text-xs text-[#D4AF37]">
               <MapPin className="w-4 h-4 shrink-0" aria-hidden="true" />
-              <span>{t('بني سويف، جمهورية مصر العربية', 'Beni Suef, Arab Republic of Egypt')}</span>
+              <span>{t(cms.about_contact.address_ar, cms.about_contact.address_en)}</span>
             </div>
           </div>
 
@@ -124,18 +125,18 @@ export function Footer() {
             </h3>
             <div className="space-y-2 text-sm text-emerald-100/90">
               <a
-                href="tel:+201142464520"
+                href={`tel:${cms.about_contact.phone_primary}`}
                 className="flex items-center gap-2 hover:text-[#D4AF37] transition-colors tabular-nums"
               >
                 <Phone className="w-4 h-4 text-[#D4AF37] shrink-0" aria-hidden="true" />
-                <span dir="ltr">+201142464520</span>
+                <span dir="ltr">{cms.about_contact.phone_primary}</span>
               </a>
               <a
-                href="mailto:info@expertconsu.com"
+                href={`mailto:${cms.notifications.public_contact_email}`}
                 className="flex items-center gap-2 hover:text-[#D4AF37] transition-colors"
               >
                 <Mail className="w-4 h-4 text-[#D4AF37] shrink-0" aria-hidden="true" />
-                <span>info@expertconsu.com</span>
+                <span>{cms.notifications.public_contact_email}</span>
               </a>
             </div>
 
@@ -177,7 +178,7 @@ export function Footer() {
 
             <div className="flex flex-wrap items-center gap-2 pt-1">
               {[
-                { label: 'WhatsApp', href: 'https://wa.me/201142464520' },
+                { label: 'WhatsApp', href: `https://wa.me/${whatsappDigits}` },
                 { label: 'Facebook', href: 'https://facebook.com' },
                 { label: 'Instagram', href: 'https://instagram.com' },
                 { label: 'LinkedIn', href: 'https://linkedin.com' },

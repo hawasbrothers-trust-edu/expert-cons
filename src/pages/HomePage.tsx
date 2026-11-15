@@ -13,7 +13,8 @@ import {
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { ARAB_COUNTRIES, SERVICES_LIST } from '../data/catalog';
+import { useSiteCms } from '../context/SiteCmsContext';
+import { ARAB_COUNTRIES } from '../data/catalog';
 import { DynamicIcon } from '../components/IconMap';
 
 function AnimatedStat({ target, suffix = '+' }: { target: number; suffix?: string }) {
@@ -49,14 +50,10 @@ function AnimatedStat({ target, suffix = '+' }: { target: number; suffix?: strin
 
 export function HomePage() {
   const { isRtl, t } = useLanguage();
+  const { cms } = useSiteCms();
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
-  const stats = [
-    { target: 5000, label_ar: 'دراسة جدوى معتمدة', label_en: 'Approved Feasibility Studies' },
-    { target: 95000, label_ar: 'طلب خدمة واستشارة', label_en: 'Advisory & Service Requests' },
-    { target: 350, label_ar: 'مستشار وخبير اقتصادي', label_en: 'Economic & Technical Experts' },
-    { target: 22, label_ar: 'دولة عربية مخدومة', label_en: 'Arab Countries Served' },
-  ];
+  const stats = cms.metrics;
 
   const whyExpert = [
     {
@@ -144,13 +141,13 @@ export function HomePage() {
   ];
 
   const previewServices = [
-    SERVICES_LIST[0],
-    SERVICES_LIST[2],
-    SERVICES_LIST[5],
-    SERVICES_LIST[7],
-    SERVICES_LIST[8],
-    SERVICES_LIST[11],
-  ];
+    cms.services[0],
+    cms.services[2],
+    cms.services[5],
+    cms.services[7],
+    cms.services[8],
+    cms.services[11],
+  ].filter(Boolean);
 
   return (
     <div>
@@ -160,21 +157,15 @@ export function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-stretch">
             <div className="lg:col-span-7 flex flex-col justify-center">
               <p className="text-xs sm:text-sm font-semibold text-[#059669] mb-4">
-                {t(
-                  'مصر والشرق الأوسط · دراسات جدوى معتمدة · خطوط إنتاج · جهات تمويل',
-                  'Egypt & MENA · Bankable Feasibility Studies · Production Lines · Funding Network'
-                )}
+                {t(cms.hero.badge_ar, cms.hero.badge_en)}
               </p>
 
               <h1 className="font-heading text-3xl sm:text-5xl lg:text-[52px] font-extrabold text-[#064E3B] leading-[1.2] tracking-tight mb-6 max-w-2xl">
-                {t('الشريك الاستراتيجي لنجاح مشروعك', 'Your Strategic Partner for Project Success')}
+                {t(cms.hero.headline_ar, cms.hero.headline_en)}
               </h1>
 
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mb-8">
-                {t(
-                  'نحول رؤيتك الاستثمارية إلى مشروع صناعي أو تجاري قابل للتنفيذ والتمويل، عبر دراسات جدوى اقتصادية دقيقة، تأمين خطوط الإنتاج العالمية، وربط مباشر بأكثر من 52 بنكاً وصندوقاً تمويلياً.',
-                  'We transform investment ideas into bankable industrial and commercial ventures through precision feasibility studies, vetted production lines, and direct access to 52+ regional banks and development funds.'
-                )}
+                {t(cms.hero.subheading_ar, cms.hero.subheading_en)}
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
@@ -182,14 +173,14 @@ export function HomePage() {
                   to="/request-study"
                   className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#059669] hover:bg-[#064E3B] text-white font-semibold text-sm sm:text-base transition-all duration-200 shadow-sm"
                 >
-                  <span>{t('اطلب دراستك الآن', 'Request Your Study Now')}</span>
+                  <span>{t(cms.hero.cta_primary_ar, cms.hero.cta_primary_en)}</span>
                   <ArrowIcon className="w-4 h-4" aria-hidden="true" />
                 </Link>
                 <Link
                   to="/book-appointment"
                   className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-white/90 hover:bg-emerald-50 text-[#064E3B] border border-[#059669]/35 font-semibold text-sm sm:text-base transition-all duration-200"
                 >
-                  <span>{t('احجز استشارة مجانية', 'Book Free Consultation')}</span>
+                  <span>{t(cms.hero.cta_secondary_ar, cms.hero.cta_secondary_en)}</span>
                 </Link>
               </div>
             </div>
@@ -289,10 +280,10 @@ export function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mb-10">
             <p className="text-xs font-semibold text-[#059669] mb-2">
-              {t('القيمة الاستشارية المضافة', 'Strategic Advisory Edge')}
+              {t(cms.hero.why_subtitle_ar, cms.hero.why_subtitle_en)}
             </p>
             <h2 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900">
-              {t('لماذا يختار المستثمرون شركة EXPERT؟', 'Why Investors Choose EXPERT')}
+              {t(cms.hero.why_title_ar, cms.hero.why_title_en)}
             </h2>
           </div>
 
@@ -471,16 +462,13 @@ export function HomePage() {
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 text-xs font-semibold text-amber-200 mb-3">
                 <Award className="w-4 h-4" aria-hidden="true" />
-                <span>{t('تقييم مبدئي مجاني لفكرتك', 'Complimentary Initial Assessment')}</span>
+                <span>{t(cms.hero.welcome_badge_ar, cms.hero.welcome_badge_en)}</span>
               </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mb-3">
-                {t('جاهز لإطلاق مشروعك على أسس اقتصادية راسخة؟', 'Ready to Launch Your Venture on Verified Economics?')}
+                {t(cms.hero.welcome_title_ar, cms.hero.welcome_title_en)}
               </h2>
               <p className="text-sm sm:text-base text-emerald-50/90 leading-relaxed">
-                {t(
-                  'ابدأ معالج طلب الدراسة الذكي في دقيقتين أو احجز جلسة مباشرة مع مستشارينا لمناقشة التمويل وخطوط الإنتاج.',
-                  'Complete our 2-minute Smart Study Request Wizard or book a live session with our consultants to plan funding and equipment.'
-                )}
+                {t(cms.hero.welcome_desc_ar, cms.hero.welcome_desc_en)}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 shrink-0">

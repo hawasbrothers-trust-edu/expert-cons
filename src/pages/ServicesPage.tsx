@@ -2,10 +2,11 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DynamicIcon } from '../components/IconMap';
 import { useLanguage } from '../context/LanguageContext';
-import { SERVICES_LIST } from '../data/catalog';
+import { useSiteCms } from '../context/SiteCmsContext';
 
 export function ServicesPage() {
   const { isRtl, t } = useLanguage();
+  const { cms } = useSiteCms();
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
   return (
@@ -27,7 +28,7 @@ export function ServicesPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SERVICES_LIST.map((srv, idx) => {
+          {cms.services.map((srv, idx) => {
             const isFeatured = idx === 0 || idx === 5 || idx === 7;
             return (
               <div
@@ -49,13 +50,26 @@ export function ServicesPage() {
                     >
                       <DynamicIcon name={srv.icon} className="w-5 h-5" />
                     </div>
-                    <span
-                      className={`text-xs font-semibold tabular-nums ${
-                        isFeatured ? 'text-[#D4AF37]' : 'text-slate-400'
-                      }`}
-                    >
-                      {srv.code}.
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {srv.price_ar && (
+                        <span
+                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-md tabular-nums ${
+                            isFeatured
+                              ? 'bg-emerald-900/90 text-emerald-100 border border-emerald-700'
+                              : 'bg-emerald-50 text-[#064E3B] border border-emerald-200/70'
+                          }`}
+                        >
+                          {t(srv.price_ar, srv.price_en)}
+                        </span>
+                      )}
+                      <span
+                        className={`text-xs font-semibold tabular-nums ${
+                          isFeatured ? 'text-[#D4AF37]' : 'text-slate-400'
+                        }`}
+                      >
+                        {srv.code}.
+                      </span>
+                    </div>
                   </div>
                   <h2 className="font-heading text-lg font-bold mb-2">
                     {t(srv.title_ar, srv.title_en)}

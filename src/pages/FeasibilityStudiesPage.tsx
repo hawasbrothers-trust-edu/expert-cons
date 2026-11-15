@@ -2,10 +2,12 @@ import { ArrowLeft, ArrowRight, CheckCircle2, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DynamicIcon } from '../components/IconMap';
 import { useLanguage } from '../context/LanguageContext';
+import { useSiteCms } from '../context/SiteCmsContext';
 import { SECTORS, STUDY_TYPES } from '../data/catalog';
 
 export function FeasibilityStudiesPage() {
   const { isRtl, t } = useLanguage();
+  const { cms } = useSiteCms();
   const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
 
   return (
@@ -131,6 +133,13 @@ export function FeasibilityStudiesPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {SECTORS.map((sector, idx) => {
+              const cmsSector = cms.sectors.find((s) => s.id === sector.id);
+              const nameAr = cmsSector?.name_ar || sector.name_ar;
+              const nameEn = cmsSector?.name_en || sector.name_en;
+              const descAr = cmsSector?.description_ar || sector.description_ar;
+              const descEn = cmsSector?.description_en || sector.description_en;
+              const priceAr = cmsSector?.price_ar;
+              const priceEn = cmsSector?.price_en;
               const spanClass = idx === 0 || idx === 6 ? 'lg:col-span-2' : '';
               return (
                 <div
@@ -142,15 +151,22 @@ export function FeasibilityStudiesPage() {
                       <div className="w-11 h-11 rounded-xl bg-emerald-50 text-[#059669] flex items-center justify-center">
                         <DynamicIcon name={sector.icon} className="w-5 h-5" />
                       </div>
-                      <span className="text-xs font-semibold text-slate-400 tabular-nums">
-                        {String(idx + 1).padStart(2, '0')}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {priceAr && (
+                          <span className="text-xs font-semibold text-[#064E3B] bg-emerald-50 border border-emerald-200/70 px-2.5 py-1 rounded-lg tabular-nums">
+                            {t(priceAr, priceEn || priceAr)}
+                          </span>
+                        )}
+                        <span className="text-xs font-semibold text-slate-400 tabular-nums">
+                          {String(idx + 1).padStart(2, '0')}
+                        </span>
+                      </div>
                     </div>
                     <h3 className="font-heading text-xl font-bold text-slate-900 mb-2">
-                      {t(sector.name_ar, sector.name_en)}
+                      {t(nameAr, nameEn)}
                     </h3>
                     <p className="text-sm text-slate-600 leading-relaxed mb-4">
-                      {t(sector.description_ar, sector.description_en)}
+                      {t(descAr, descEn)}
                     </p>
                     <div className="space-y-1.5 mb-6">
                       {(isRtl ? sector.deliverables_ar : sector.deliverables_en).map((d, i) => (

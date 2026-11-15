@@ -1,4 +1,6 @@
 import {
+  DEFAULT_ADMIN_PROFILE,
+  DEFAULT_SITE_CMS_CONFIG,
   SEED_APPOINTMENTS,
   SEED_BLOG_POSTS,
   SEED_CLIENT_DOCS,
@@ -7,6 +9,7 @@ import {
   SEED_STUDY_REQUESTS,
 } from '../data/catalog';
 import type {
+  AdminProfileConfig,
   Appointment,
   AppointmentDraft,
   AppointmentStatus,
@@ -15,9 +18,11 @@ import type {
   ClientDocument,
   ClientPortalMessage,
   ContactMessage,
+  NotificationAlertLog,
   ProductionLineMediaConfig,
   ProductionLineTabKey,
   Review,
+  SiteCmsConfig,
   StudyRequest,
   StudyRequestDraft,
   StudyRequestStatus,
@@ -33,9 +38,14 @@ const KEYS = {
   PORTAL_MESSAGES: 'expert_portal_messages_v1',
   AUTH_USER: 'expert_auth_user_v1',
   PRODUCTION_LINE_MEDIA: 'expert_production_line_media_v1',
+  SITE_CMS: 'expert_site_cms_v1',
+  ADMIN_PROFILE: 'expert_admin_profile_v1',
+  ADMIN_SECRET: 'expert_admin_secret_v1',
+  NOTIFICATION_LOGS: 'expert_notification_logs_v1',
 };
 
-const ADMIN_EMAILS = ['admin@expertconsu.com', 'info@expertconsu.com', 'badr@expertconsu.com'];
+const BASE_ADMIN_EMAILS = ['admin@expertconsu.com', 'info@expertconsu.com', 'badr@expertconsu.com'];
+const DEFAULT_ADMIN_PASSWORD = 'ExpertAdmin2026!';
 
 function readStore<T>(key: string, seed: T): T {
   try {
@@ -61,6 +71,82 @@ function writeStore<T>(key: string, data: T): void {
 function generateId(prefix: string): string {
   const random = Math.floor(1000 + Math.random() * 9000);
   return `${prefix}-${Date.now().toString().slice(-4)}${random}`;
+}
+
+function mergeCmsWithDefaults(partial?: Partial<SiteCmsConfig> | null): SiteCmsConfig {
+  if (!partial) return DEFAULT_SITE_CMS_CONFIG;
+  return {
+    hero: { ...DEFAULT_SITE_CMS_CONFIG.hero, ...(partial.hero || {}) },
+    metrics:
+      Array.isArray(partial.metrics) && partial.metrics.length === DEFAULT_SITE_CMS_CONFIG.metrics.length
+        ? partial.metrics
+        : DEFAULT_SITE_CMS_CONFIG.metrics,
+    sectors:
+      Array.isArray(partial.sectors) && partial.sectors.length > 0
+        ? partial.sectors
+        : DEFAULT_SITE_CMS_CONFIG.sectors,
+    services:
+      Array.isArray(partial.services) && partial.services.length > 0
+        ? partial.services
+        : DEFAULT_SITE_CMS_CONFIG.services,
+    about_contact: {
+      ...DEFAULT_SITE_CMS_CONFIG.about_contact,
+      ...(partial.about_contact || {}),
+    },
+    notifications: {
+      ...DEFAULT_SITE_CMS_CONFIG.notifications,
+      ...(partial.notifications || {}),
+    },
+    production_lines:
+      Array.isArray(partial.production_lines) && partial.production_lines.length > 0
+        ? partial.production_lines
+        : DEFAULT_SITE_CMS_CONFIG.production_lines,
+    production_tabs:
+      Array.isArray(partial.production_tabs) && partial.production_tabs.length > 0
+        ? partial.production_tabs
+        : DEFAULT_SITE_CMS_CONFIG.production_tabs,
+  };
+}
+
+function getAllowedAdminEmails(): string[] {
+  const profile = readStore<AdminProfileConfig>(KEYS.ADMIN_PROFILE, DEFAULT_ADMIN_PROFILE);
+  const emails = new Set(BASE_ADMIN_EMAILS.map((e) => e.toLowerCase()));
+  if (profile.admin_email?.trim()) {
+    emails.add(profile.admin_email.trim().toLowerCase());
+  }
+  return Array.from(emails);
+}
+
+function recordAlertLog(
+  event_type: NotificationAlertLog['event_type'],
+  subject: string,
+  details: string,
+  overrideRecipient?: string
+): NotificationAlertLog {
+  const cms = api.getSiteCmsConfigSync();
+  const recipient = overrideRecipient || cms.notifications.notification_email || 'alerts@expertconsu.com';
+  const entry: NotificationAlertLog = {
+    id: generateId('ALT'),
+    event_type,
+    recipient_email: recipient,
+    subject,
+    details,
+    created_at: new Date().toISOString(),
+  };
+  const current = readStore<NotificationAlertLog[]>(KEYS.NOTIFICATION_LOGS, []);
+  writeStore(KEYS.NOTIFICATION_LOGS, [entry, ...current].slice(0, 50));
+
+  if (isSupabaseConfigured && supabase) {
+    void supabase.from('notification_logs').insert([
+      {
+        event_type: entry.event_type,
+        recipient_email: entry.recipient_email,
+        subject: entry.subject,
+        details: entry.details,
+      },
+    ]);
+  }
+  return entry;
 }
 
 export const api = {
@@ -93,6 +179,15 @@ export const api = {
       status: 'received',
       created_at: new Date().toISOString(),
     };
+
+    const cms = api.getSiteCmsConfigSync();
+    if (cms.notifications.alert_on_study_request) {
+      recordAlertLog(
+        'study_request',
+        `طلب دراسة جديد: ${newRecord.project_name}`,
+        `مقدم الطلب: ${newRecord.name} (${newRecord.phone}) · القطاع: ${newRecord.sector}`
+      );
+    }
 
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
@@ -157,6 +252,15 @@ export const api = {
       status: 'pending',
       created_at: new Date().toISOString(),
     };
+
+    const cms = api.getSiteCmsConfigSync();
+    if (cms.notifications.alert_on_booking) {
+      recordAlertLog(
+        'booking',
+        `حجز موعد استشارة جديد: ${newAppt.name}`,
+        `الموضوع: ${newAppt.topic} · الموعد: ${newAppt.date} ${newAppt.time}`
+      );
+    }
 
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
@@ -243,16 +347,134 @@ export const api = {
     return review;
   },
 
-  // Blog Posts
+  // Blog Posts (Full CRUD)
   async listBlogPosts(): Promise<BlogPost[]> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('blog_posts')
         .select('*')
         .order('created_at', { ascending: false });
-      if (!error && data && data.length > 0) return data as BlogPost[];
+      if (!error && data && data.length > 0) {
+        writeStore(KEYS.BLOG_POSTS, data as BlogPost[]);
+        return data as BlogPost[];
+      }
     }
     return readStore<BlogPost[]>(KEYS.BLOG_POSTS, SEED_BLOG_POSTS);
+  },
+
+  async createBlogPost(input: Omit<BlogPost, 'id'>): Promise<BlogPost> {
+    const post: BlogPost = {
+      id: generateId('blog'),
+      title_ar: input.title_ar.trim(),
+      title_en: input.title_en.trim() || input.title_ar.trim(),
+      excerpt_ar:
+        input.excerpt_ar.trim() ||
+        input.content_ar.trim().slice(0, 140) + (input.content_ar.length > 140 ? '...' : ''),
+      excerpt_en:
+        input.excerpt_en.trim() ||
+        input.content_en.trim().slice(0, 140) + (input.content_en.length > 140 ? '...' : ''),
+      content_ar: input.content_ar.trim(),
+      content_en: input.content_en.trim() || input.content_ar.trim(),
+      category: input.category,
+      author_ar: input.author_ar?.trim() || 'فريق EXPERT الاستشاري',
+      author_en: input.author_en?.trim() || 'EXPERT Advisory Team',
+      read_minutes: Number(input.read_minutes) || 5,
+      image_url: input.image_url.trim(),
+      created_at: input.created_at || new Date().toISOString().split('T')[0],
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .insert([
+          {
+            title_ar: post.title_ar,
+            title_en: post.title_en,
+            excerpt_ar: post.excerpt_ar,
+            excerpt_en: post.excerpt_en,
+            content_ar: post.content_ar,
+            content_en: post.content_en,
+            category: post.category,
+            read_minutes: post.read_minutes,
+            image_url: post.image_url,
+            created_at: post.created_at,
+          },
+        ])
+        .select()
+        .single();
+      if (!error && data) {
+        const current = readStore<BlogPost[]>(KEYS.BLOG_POSTS, SEED_BLOG_POSTS);
+        const created = { ...post, ...(data as BlogPost) };
+        writeStore(KEYS.BLOG_POSTS, [created, ...current]);
+        window.dispatchEvent(new Event('expert:blog-updated'));
+        return created;
+      }
+    }
+
+    const current = readStore<BlogPost[]>(KEYS.BLOG_POSTS, SEED_BLOG_POSTS);
+    writeStore(KEYS.BLOG_POSTS, [post, ...current]);
+    window.dispatchEvent(new Event('expert:blog-updated'));
+    return post;
+  },
+
+  async updateBlogPost(id: string, updates: Omit<BlogPost, 'id'>): Promise<BlogPost> {
+    const updatedPost: BlogPost = {
+      id,
+      title_ar: updates.title_ar.trim(),
+      title_en: updates.title_en.trim() || updates.title_ar.trim(),
+      excerpt_ar:
+        updates.excerpt_ar.trim() ||
+        updates.content_ar.trim().slice(0, 140) + (updates.content_ar.length > 140 ? '...' : ''),
+      excerpt_en:
+        updates.excerpt_en.trim() ||
+        updates.content_en.trim().slice(0, 140) + (updates.content_en.length > 140 ? '...' : ''),
+      content_ar: updates.content_ar.trim(),
+      content_en: updates.content_en.trim() || updates.content_ar.trim(),
+      category: updates.category,
+      author_ar: updates.author_ar?.trim() || 'فريق EXPERT الاستشاري',
+      author_en: updates.author_en?.trim() || 'EXPERT Advisory Team',
+      read_minutes: Number(updates.read_minutes) || 5,
+      image_url: updates.image_url.trim(),
+      created_at: updates.created_at || new Date().toISOString().split('T')[0],
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase
+        .from('blog_posts')
+        .update({
+          title_ar: updatedPost.title_ar,
+          title_en: updatedPost.title_en,
+          excerpt_ar: updatedPost.excerpt_ar,
+          excerpt_en: updatedPost.excerpt_en,
+          content_ar: updatedPost.content_ar,
+          content_en: updatedPost.content_en,
+          category: updatedPost.category,
+          read_minutes: updatedPost.read_minutes,
+          image_url: updatedPost.image_url,
+          created_at: updatedPost.created_at,
+        })
+        .eq('id', id);
+    }
+
+    const current = readStore<BlogPost[]>(KEYS.BLOG_POSTS, SEED_BLOG_POSTS);
+    writeStore(
+      KEYS.BLOG_POSTS,
+      current.map((p) => (p.id === id ? updatedPost : p))
+    );
+    window.dispatchEvent(new Event('expert:blog-updated'));
+    return updatedPost;
+  },
+
+  async deleteBlogPost(id: string): Promise<void> {
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('blog_posts').delete().eq('id', id);
+    }
+    const current = readStore<BlogPost[]>(KEYS.BLOG_POSTS, SEED_BLOG_POSTS);
+    writeStore(
+      KEYS.BLOG_POSTS,
+      current.filter((p) => p.id !== id)
+    );
+    window.dispatchEvent(new Event('expert:blog-updated'));
   },
 
   // Contact Messages
@@ -272,6 +494,16 @@ export const api = {
       message: input.message.trim(),
       created_at: new Date().toISOString(),
     };
+
+    const cms = api.getSiteCmsConfigSync();
+    if (cms.notifications.alert_on_contact_message) {
+      recordAlertLog(
+        'contact_message',
+        `رسالة تواصل جديدة: ${msg.subject}`,
+        `المرسل: ${msg.name} (${msg.email} · ${msg.phone})`
+      );
+    }
+
     const current = readStore<ContactMessage[]>(KEYS.CONTACTS, []);
     writeStore(KEYS.CONTACTS, [msg, ...current]);
     return msg;
@@ -303,6 +535,9 @@ export const api = {
 
   // Auth (Supabase Auth + Local Session Fallback)
   async getCurrentUser(): Promise<AuthUser | null> {
+    const allowedAdmins = getAllowedAdminEmails();
+    const adminProfile = readStore<AdminProfileConfig>(KEYS.ADMIN_PROFILE, DEFAULT_ADMIN_PROFILE);
+
     if (isSupabaseConfigured && supabase) {
       const { data } = await supabase.auth.getUser();
       if (data.user?.email) {
@@ -311,11 +546,14 @@ export const api = {
           .select('email')
           .eq('email', data.user.email)
           .maybeSingle();
-        const isAdmin = Boolean(adminRow) || ADMIN_EMAILS.includes(data.user.email.toLowerCase());
+        const isAdmin =
+          Boolean(adminRow) || allowedAdmins.includes(data.user.email.toLowerCase());
         return {
           id: data.user.id,
           email: data.user.email,
-          name: (data.user.user_metadata?.full_name as string) || data.user.email.split('@')[0],
+          name: isAdmin
+            ? adminProfile.display_name
+            : (data.user.user_metadata?.full_name as string) || data.user.email.split('@')[0],
           role: isAdmin ? 'admin' : 'client',
         };
       }
@@ -329,11 +567,18 @@ export const api = {
     }
   },
 
-  async signIn(email: string, password: string, expectedRole?: 'admin' | 'client'): Promise<{ user?: AuthUser; error?: string }> {
+  async signIn(
+    email: string,
+    password: string,
+    expectedRole?: 'admin' | 'client'
+  ): Promise<{ user?: AuthUser; error?: string }> {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !password || password.length < 6) {
       return { error: 'يرجى إدخال البريد الإلكتروني وكلمة مرور صحيحة (6 أحرف على الأقل)' };
     }
+
+    const allowedAdmins = getAllowedAdminEmails();
+    const adminProfile = readStore<AdminProfileConfig>(KEYS.ADMIN_PROFILE, DEFAULT_ADMIN_PROFILE);
 
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -348,29 +593,40 @@ export const api = {
         .select('email')
         .eq('email', normalizedEmail)
         .maybeSingle();
-      const isAdmin = Boolean(adminRow) || ADMIN_EMAILS.includes(normalizedEmail);
+      const isAdmin = Boolean(adminRow) || allowedAdmins.includes(normalizedEmail);
       if (expectedRole === 'admin' && !isAdmin) {
         return { error: 'هذا الحساب غير مصرح له بالدخول إلى لوحة الإدارة' };
       }
       const user: AuthUser = {
         id: data.user.id,
         email: normalizedEmail,
-        name: (data.user.user_metadata?.full_name as string) || normalizedEmail.split('@')[0],
+        name: isAdmin
+          ? adminProfile.display_name
+          : (data.user.user_metadata?.full_name as string) || normalizedEmail.split('@')[0],
         role: isAdmin ? 'admin' : 'client',
       };
       window.dispatchEvent(new Event('expert:auth-changed'));
       return { user };
     }
 
-    const isAdminEmail = ADMIN_EMAILS.includes(normalizedEmail);
+    const isAdminEmail = allowedAdmins.includes(normalizedEmail);
     if (expectedRole === 'admin' && !isAdminEmail) {
-      return { error: 'عذراً، لوحة الإدارة مخصصة لبريد المسؤولين المعتمد فقط (مثل admin@expertconsu.com)' };
+      return {
+        error: `عذراً، لوحة الإدارة مخصصة لبريد المسؤولين المعتمد فقط (مثل ${adminProfile.admin_email})`,
+      };
+    }
+
+    if (isAdminEmail) {
+      const storedSecret = readStore<string>(KEYS.ADMIN_SECRET, DEFAULT_ADMIN_PASSWORD);
+      if (password !== storedSecret) {
+        return { error: 'كلمة مرور المدير غير صحيحة. يرجى التحقق والمحاولة مجدداً.' };
+      }
     }
 
     const user: AuthUser = {
       id: generateId('usr'),
       email: normalizedEmail,
-      name: isAdminEmail ? 'مدير النظام — EXPERT' : 'أحمد عبد الرحمن',
+      name: isAdminEmail ? adminProfile.display_name : 'أحمد عبد الرحمن',
       role: isAdminEmail ? 'admin' : 'client',
     };
     writeStore(KEYS.AUTH_USER, user);
@@ -378,7 +634,11 @@ export const api = {
     return { user };
   },
 
-  async signUpClient(email: string, password: string, fullName: string): Promise<{ user?: AuthUser; error?: string }> {
+  async signUpClient(
+    email: string,
+    password: string,
+    fullName: string
+  ): Promise<{ user?: AuthUser; error?: string }> {
     const normalizedEmail = email.trim().toLowerCase();
     if (!fullName.trim() || !normalizedEmail || password.length < 6) {
       return { error: 'يرجى استكمال الاسم والبريد وكلمة المرور (6 أحرف على الأقل)' };
@@ -427,7 +687,196 @@ export const api = {
     window.dispatchEvent(new Event('expert:auth-changed'));
   },
 
-  // Production Line Media Overrides
+  // Admin Profile & Security
+  getAdminProfileSync(): AdminProfileConfig {
+    return readStore<AdminProfileConfig>(KEYS.ADMIN_PROFILE, DEFAULT_ADMIN_PROFILE);
+  },
+
+  async getAdminProfile(): Promise<AdminProfileConfig> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'admin_profile')
+        .maybeSingle();
+      if (!error && data?.value) {
+        const merged = { ...DEFAULT_ADMIN_PROFILE, ...(data.value as Partial<AdminProfileConfig>) };
+        writeStore(KEYS.ADMIN_PROFILE, merged);
+        return merged;
+      }
+    }
+    return readStore<AdminProfileConfig>(KEYS.ADMIN_PROFILE, DEFAULT_ADMIN_PROFILE);
+  },
+
+  async updateAdminProfile(input: {
+    display_name: string;
+    admin_email: string;
+  }): Promise<{ profile?: AdminProfileConfig; error?: string }> {
+    const displayName = input.display_name.trim();
+    const adminEmail = input.admin_email.trim().toLowerCase();
+    if (!displayName || !adminEmail || !adminEmail.includes('@')) {
+      return { error: 'يرجى إدخال اسم العرض وبريد إلكتروني إداري صحيح' };
+    }
+
+    const updated: AdminProfileConfig = {
+      display_name: displayName,
+      admin_email: adminEmail,
+      updated_at: new Date().toISOString(),
+    };
+
+    writeStore(KEYS.ADMIN_PROFILE, updated);
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('site_settings').upsert({
+        key: 'admin_profile',
+        value: updated,
+        updated_at: updated.updated_at,
+      });
+      await supabase.auth.updateUser({
+        data: { full_name: displayName },
+      });
+    }
+
+    try {
+      const rawUser = localStorage.getItem(KEYS.AUTH_USER);
+      if (rawUser) {
+        const parsed = JSON.parse(rawUser) as AuthUser;
+        if (parsed.role === 'admin') {
+          writeStore(KEYS.AUTH_USER, {
+            ...parsed,
+            name: displayName,
+            email: adminEmail,
+          });
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    window.dispatchEvent(new Event('expert:auth-changed'));
+    return { profile: updated };
+  },
+
+  async changeAdminPassword(
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!currentPassword) {
+      return { success: false, error: 'يرجى إدخال كلمة المرور الحالية' };
+    }
+    if (!newPassword || newPassword.length < 6) {
+      return { success: false, error: 'يجب أن تتكون كلمة المرور الجديدة من 6 أحرف على الأقل' };
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      writeStore(KEYS.ADMIN_SECRET, newPassword);
+      return { success: true };
+    }
+
+    const storedSecret = readStore<string>(KEYS.ADMIN_SECRET, DEFAULT_ADMIN_PASSWORD);
+    if (currentPassword !== storedSecret) {
+      return { success: false, error: 'كلمة المرور الحالية غير مطابقة' };
+    }
+
+    writeStore(KEYS.ADMIN_SECRET, newPassword);
+    return { success: true };
+  },
+
+  // Comprehensive Site CMS Configuration
+  getSiteCmsConfigSync(): SiteCmsConfig {
+    let stored: Partial<SiteCmsConfig> | null = null;
+    try {
+      const raw = localStorage.getItem(KEYS.SITE_CMS);
+      stored = raw ? (JSON.parse(raw) as Partial<SiteCmsConfig>) : null;
+    } catch {
+      stored = null;
+    }
+    const merged = mergeCmsWithDefaults(stored);
+
+    // Apply legacy production line media overrides if present
+    const legacyMedia = api.getProductionLineMedia();
+    if (Object.keys(legacyMedia.items).length > 0) {
+      merged.production_lines = merged.production_lines.map((pl) => ({
+        ...pl,
+        image_url: legacyMedia.items[pl.id] || pl.image_url,
+      }));
+    }
+    if (Object.keys(legacyMedia.tabs).length > 0) {
+      merged.production_tabs = merged.production_tabs.map((tab) => ({
+        ...tab,
+        image_url: legacyMedia.tabs[tab.id] || tab.image_url,
+      }));
+    }
+    return merged;
+  },
+
+  async getSiteCmsConfig(): Promise<SiteCmsConfig> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'site_cms_config')
+        .maybeSingle();
+      if (!error && data?.value) {
+        const merged = mergeCmsWithDefaults(data.value as Partial<SiteCmsConfig>);
+        writeStore(KEYS.SITE_CMS, merged);
+        return merged;
+      }
+    }
+    return api.getSiteCmsConfigSync();
+  },
+
+  async saveSiteCmsConfig(config: SiteCmsConfig): Promise<SiteCmsConfig> {
+    const clean = mergeCmsWithDefaults(config);
+    writeStore(KEYS.SITE_CMS, clean);
+
+    // Keep production media key synced so both views agree
+    const mediaPayload: ProductionLineMediaConfig = {
+      items: Object.fromEntries(clean.production_lines.map((pl) => [pl.id, pl.image_url])),
+      tabs: Object.fromEntries(clean.production_tabs.map((tb) => [tb.id, tb.image_url])),
+    };
+    writeStore(KEYS.PRODUCTION_LINE_MEDIA, mediaPayload);
+
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('site_settings').upsert({
+        key: 'site_cms_config',
+        value: clean,
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    window.dispatchEvent(new Event('expert:cms-updated'));
+    window.dispatchEvent(new Event('expert:production-media-updated'));
+    return clean;
+  },
+
+  // Notification Logs & Test Trigger
+  async listNotificationLogs(): Promise<NotificationAlertLog[]> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase
+        .from('notification_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (!error && data && data.length > 0) return data as NotificationAlertLog[];
+    }
+    return readStore<NotificationAlertLog[]>(KEYS.NOTIFICATION_LOGS, []);
+  },
+
+  async sendTestNotification(targetEmail: string): Promise<NotificationAlertLog> {
+    return recordAlertLog(
+      'test',
+      'إشعار تجريبي — مركز عمليات EXPERT',
+      'تم اختبار قناة التنبيهات الفورية بنجاح. ستصل إشعارات الطلبات الجديدة إلى هذا البريد.',
+      targetEmail
+    );
+  },
+
+  // Production Line Media Overrides (kept compatible)
   getProductionLineMedia(): ProductionLineMediaConfig {
     const fallback: ProductionLineMediaConfig = { items: {}, tabs: {} };
     try {
@@ -456,6 +905,7 @@ export const api = {
     }
     writeStore(KEYS.PRODUCTION_LINE_MEDIA, updated);
     window.dispatchEvent(new Event('expert:production-media-updated'));
+    window.dispatchEvent(new Event('expert:cms-updated'));
     return updated;
   },
 
@@ -472,13 +922,19 @@ export const api = {
     }
     writeStore(KEYS.PRODUCTION_LINE_MEDIA, updated);
     window.dispatchEvent(new Event('expert:production-media-updated'));
+    window.dispatchEvent(new Event('expert:cms-updated'));
     return updated;
   },
 
   resetProductionLineMedia(): ProductionLineMediaConfig {
     const empty: ProductionLineMediaConfig = { items: {}, tabs: {} };
     writeStore(KEYS.PRODUCTION_LINE_MEDIA, empty);
+    const currentCms = api.getSiteCmsConfigSync();
+    currentCms.production_lines = DEFAULT_SITE_CMS_CONFIG.production_lines;
+    currentCms.production_tabs = DEFAULT_SITE_CMS_CONFIG.production_tabs;
+    writeStore(KEYS.SITE_CMS, currentCms);
     window.dispatchEvent(new Event('expert:production-media-updated'));
+    window.dispatchEvent(new Event('expert:cms-updated'));
     return empty;
   },
 };

@@ -1,23 +1,16 @@
 import { CheckCircle2, Factory, ShoppingBag, Sprout, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { PRODUCTION_LINES, PRODUCTION_LINE_TABS } from '../data/catalog';
+import { useSiteCms } from '../context/SiteCmsContext';
 import { api } from '../lib/api';
-import type {
-  ProductionCategory,
-  ProductionLineItem,
-  ProductionLineMediaConfig,
-  ProductionLineTabKey,
-} from '../types';
+import type { ProductionCategory, ProductionLineItem, ProductionLineTabKey } from '../types';
 import { validateEmail, validatePhone } from '../utils/validation';
 
 export function ProductionLinesPage() {
   const { isRtl, t } = useLanguage();
+  const { cms } = useSiteCms();
   const [category, setCategory] = useState<ProductionLineTabKey>('all');
-  const [mediaConfig, setMediaConfig] = useState<ProductionLineMediaConfig>(() =>
-    api.getProductionLineMedia()
-  );
   const [inquiryItem, setInquiryItem] = useState<ProductionLineItem | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -25,22 +18,11 @@ export function ProductionLinesPage() {
   const [inquiryError, setInquiryError] = useState('');
   const [inquirySent, setInquirySent] = useState(false);
 
-  useEffect(() => {
-    const syncMedia = () => {
-      setMediaConfig(api.getProductionLineMedia());
-    };
-    window.addEventListener('expert:production-media-updated', syncMedia);
-    window.addEventListener('storage', syncMedia);
-    return () => {
-      window.removeEventListener('expert:production-media-updated', syncMedia);
-      window.removeEventListener('storage', syncMedia);
-    };
-  }, []);
+  const lines = cms.production_lines;
+  const tabs = cms.production_tabs;
 
   const filtered =
-    category === 'all'
-      ? PRODUCTION_LINES
-      : PRODUCTION_LINES.filter((item) => item.category === category);
+    category === 'all' ? lines : lines.filter((item) => item.category === category);
 
   const getVisualIcon = (cat: ProductionCategory) => {
     if (cat === 'industrial') return Factory;
@@ -49,9 +31,7 @@ export function ProductionLinesPage() {
   };
 
   const getTabCount = (tabId: ProductionLineTabKey) =>
-    tabId === 'all'
-      ? PRODUCTION_LINES.length
-      : PRODUCTION_LINES.filter((item) => item.category === tabId).length;
+    tabId === 'all' ? lines.length : lines.filter((item) => item.category === tabId).length;
 
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,8 +80,7 @@ export function ProductionLinesPage() {
 
         {/* Category Tabs with Realistic Miniature Thumbnails */}
         <div className="flex flex-wrap items-center gap-3" role="tablist" aria-label={t('تصنيفات خطوط الإنتاج', 'Production line categories')}>
-          {PRODUCTION_LINE_TABS.map((cat) => {
-            const tabImage = mediaConfig.tabs[cat.id] || cat.image_url;
+          {tabs.map((cat) => {
             const active = category === cat.id;
             return (
               <button
@@ -122,7 +101,7 @@ export function ProductionLinesPage() {
                   }`}
                 >
                   <img
-                    src={tabImage}
+                    src={cat.image_url}
                     alt={t(cat.ar, cat.en)}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -145,17 +124,15 @@ export function ProductionLinesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((item) => {
             const Icon = getVisualIcon(item.category);
-            const cardImage = mediaConfig.items[item.id] || item.image_url;
             return (
               <div
                 key={item.id}
                 className="group bg-white rounded-2xl border border-slate-200/70 overflow-hidden flex flex-col justify-between transition-all duration-300 hover:-translate-y-0.5 hover:border-[#059669]/50 hover:shadow-md"
               >
                 <div>
-                  {/* Realistic Production Line Thumbnail */}
                   <div className="h-48 relative overflow-hidden bg-slate-900">
                     <img
-                      src={cardImage}
+                      src={item.image_url}
                       alt={t(item.title_ar, item.title_en)}
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -185,7 +162,7 @@ export function ProductionLinesPage() {
                       <div className="flex items-end justify-between gap-3">
                         <div className="w-11 h-11 rounded-xl overflow-hidden border-2 border-white/75 shadow-sm shrink-0 bg-slate-800">
                           <img
-                            src={cardImage}
+                            src={item.image_url}
                             alt=""
                             aria-hidden="true"
                             referrerPolicy="no-referrer"
@@ -200,9 +177,16 @@ export function ProductionLinesPage() {
                   </div>
 
                   <div className="p-6">
-                    <h2 className="font-heading text-lg font-bold text-slate-900 mb-2">
-                      {t(item.title_ar, item.title_en)}
-                    </h2>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h2 className="font-heading text-lg font-bold text-slate-900">
+                        {t(item.title_ar, item.title_en)}
+                      </h2>
+                      {item.price_ar && (
+                        <span className="text-[11px] font-semibold text-[#064E3B] bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md shrink-0 tabular-nums">
+                          {t(item.price_ar, item.price_en || item.price_ar)}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-slate-600 leading-relaxed mb-4">
                       {t(item.description_ar, item.description_en)}
                     </p>

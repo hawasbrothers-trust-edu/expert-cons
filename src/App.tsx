@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { LanguageProvider } from './context/LanguageContext';
+import { SiteCmsProvider } from './context/SiteCmsContext';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { BlogPage } from './pages/BlogPage';
 import { BookAppointmentPage } from './pages/BookAppointmentPage';
@@ -27,27 +28,29 @@ function ScrollToTop() {
 export default function App() {
   return (
     <LanguageProvider>
-      <BrowserRouter>
-        <ScrollToTop />
-        <Layout>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/feasibility-studies" element={<FeasibilityStudiesPage />} />
-            <Route path="/request-study" element={<StudyRequestWizardPage />} />
-            <Route path="/book-appointment" element={<BookAppointmentPage />} />
-            <Route path="/production-lines" element={<ProductionLinesPage />} />
-            <Route path="/funding-entities" element={<FundingEntitiesPage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/reviews" element={<ReviewsPage />} />
-            <Route path="/portal" element={<ClientPortalPage />} />
-            <Route path="/admin" element={<AdminDashboardPage />} />
-            <Route path="/blog" element={<BlogPage />} />
-            <Route path="/faq" element={<FaqPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
+      <SiteCmsProvider>
+        <BrowserRouter>
+          <ScrollToTop />
+          <Layout>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/feasibility-studies" element={<FeasibilityStudiesPage />} />
+              <Route path="/request-study" element={<StudyRequestWizardPage />} />
+              <Route path="/book-appointment" element={<BookAppointmentPage />} />
+              <Route path="/production-lines" element={<ProductionLinesPage />} />
+              <Route path="/funding-entities" element={<FundingEntitiesPage />} />
+              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/reviews" element={<ReviewsPage />} />
+              <Route path="/portal" element={<ClientPortalPage />} />
+              <Route path="/admin" element={<AdminDashboardPage />} />
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/faq" element={<FaqPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
+        </BrowserRouter>
+      </SiteCmsProvider>
     </LanguageProvider>
   );
 }
