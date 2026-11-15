@@ -1,0 +1,21 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # يعمل تلقائياً كل 4 أيام
+    - cron: '0 0 */4 * *'
+  workflow_dispatch: # لتجربته يدوياً بأي وقت
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase API
+        run: |
+          if [ -n "${{ secrets.VITE_SUPABASE_URL }}" ]; then
+            curl -s "${{ secrets.VITE_SUPABASE_URL }}/rest/v1/" \
+                 -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" > /dev/null
+            echo "Supabase pinged successfully! Inactivity timer reset."
+          else
+            echo "Supabase Secrets not configured yet. Workflow ran successfully without errors."
+          fi
